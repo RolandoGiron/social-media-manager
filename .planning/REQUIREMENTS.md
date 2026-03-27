@@ -88,37 +88,39 @@
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| INFRA-01 | Phase 2 | Pending |
-| INFRA-02 | Phase 2 | Pending |
-| INFRA-03 | Phase 2 | Pending |
-| CRM-01 | Phase 3 | Pending |
-| CRM-02 | Phase 3 | Pending |
-| CRM-03 | Phase 3 | Pending |
-| WA-01 | Phase 3 | Pending |
-| WA-02 | Phase 5 | Pending |
-| WA-03 | Phase 5 | Pending |
-| WA-04 | Phase 5 | Pending |
-| BOT-01 | Phase 4 | Pending |
-| BOT-02 | Phase 4 | Pending |
-| BOT-03 | Phase 4 | Pending |
-| BOT-04 | Phase 4 | Pending |
-| CAL-01 | Phase 4 | Pending |
-| CAL-02 | Phase 4 | Pending |
-| CAL-03 | Phase 7 | Pending |
-| SOCIAL-01 | Phase 6 | Pending |
-| SOCIAL-02 | Phase 6 | Pending |
-| SOCIAL-03 | Phase 6 | Pending |
-| DASH-01 | Phase 7 | Pending |
-| DASH-02 | Phase 7 | Pending |
-| DASH-03 | Phase 7 | Pending |
+| Requirement | Phase | Phase Name | Status |
+|-------------|-------|------------|--------|
+| INFRA-01 | Phase 2 | WhatsApp Core | Pending |
+| INFRA-02 | Phase 2 | WhatsApp Core | Pending |
+| INFRA-03 | Phase 2 | WhatsApp Core | Pending |
+| CRM-01 | Phase 3 | CRM Core | Pending |
+| CRM-02 | Phase 3 | CRM Core | Pending |
+| CRM-03 | Phase 3 | CRM Core | Pending |
+| WA-01 | Phase 3 | CRM Core | Pending |
+| WA-02 | Phase 5 | Campaign Blast | Pending |
+| WA-03 | Phase 5 | Campaign Blast | Pending |
+| WA-04 | Phase 5 | Campaign Blast | Pending |
+| BOT-01 | Phase 4 | AI Chatbot + Appointment Booking | Pending |
+| BOT-02 | Phase 4 | AI Chatbot + Appointment Booking | Pending |
+| BOT-03 | Phase 4 | AI Chatbot + Appointment Booking | Pending |
+| BOT-04 | Phase 4 | AI Chatbot + Appointment Booking | Pending |
+| CAL-01 | Phase 4 | AI Chatbot + Appointment Booking | Pending |
+| CAL-02 | Phase 4 | AI Chatbot + Appointment Booking | Pending |
+| CAL-03 | Phase 7 | Automation Layer + Dashboard | Pending |
+| SOCIAL-01 | Phase 6 | Social Media Publishing | Pending |
+| SOCIAL-02 | Phase 6 | Social Media Publishing | Pending |
+| SOCIAL-03 | Phase 6 | Social Media Publishing | Pending |
+| DASH-01 | Phase 7 | Automation Layer + Dashboard | Pending |
+| DASH-02 | Phase 7 | Automation Layer + Dashboard | Pending |
+| DASH-03 | Phase 7 | Automation Layer + Dashboard | Pending |
 
 **Coverage:**
 - v1 requirements: 23 total
 - Mapped to phases: 23
 - Unmapped: 0 ✓
 
+**Note:** Phase 1 (Infrastructure Foundation) has no formal requirements — it delivers the Docker Compose stack, database schema, and Meta App Review submission that are prerequisites for all subsequent phases.
+
 ---
 *Requirements defined: 2026-03-27*
-*Last updated: 2026-03-27 after initial definition*
+*Last updated: 2026-03-27 after roadmap creation*
