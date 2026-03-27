@@ -31,7 +31,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. n8n UI is accessible via HTTPS through Caddy with no services exposed directly on non-standard ports
   3. PostgreSQL database is reachable from n8n and contains all required tables (patients, conversations, appointments, campaign_log, workflow_errors)
   4. Meta App Review request is submitted and confirmation email received
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Docker Compose stack, PostgreSQL schema, Caddy reverse proxy, operational scripts
+- [ ] 01-02-PLAN.md — Meta App Review submission guide and human checkpoint
 
 ### Phase 2: WhatsApp Core
 **Goal**: The clinic's WhatsApp number is connected and the system automatically alerts on disconnection
@@ -110,7 +114,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Infrastructure Foundation | 0/? | Not started | - |
+| 1. Infrastructure Foundation | 0/2 | Planning complete | - |
 | 2. WhatsApp Core | 0/? | Not started | - |
 | 3. CRM Core | 0/? | Not started | - |
 | 4. AI Chatbot + Appointment Booking | 0/? | Not started | - |
