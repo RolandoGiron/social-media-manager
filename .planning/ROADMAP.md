@@ -50,7 +50,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Evolution API client, env vars, test scaffolds
-- [ ] 02-02-PLAN.md — Streamlit multipage UI with sidebar status and QR page
+- [x] 02-02-PLAN.md — Streamlit multipage UI with sidebar status and QR page
 - [x] 02-03-PLAN.md — n8n workflows for disconnect alert and message stub
 **UI hint**: yes
 
