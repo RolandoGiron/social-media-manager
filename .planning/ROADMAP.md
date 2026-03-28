@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Docker Compose stack, PostgreSQL schema, Caddy reverse proxy, operational scripts
+- [x] 01-01-PLAN.md — Docker Compose stack, PostgreSQL schema, Caddy reverse proxy, operational scripts
 - [ ] 01-02-PLAN.md — Meta App Review submission guide and human checkpoint
 
 ### Phase 2: WhatsApp Core
