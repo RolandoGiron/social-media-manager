@@ -7,7 +7,7 @@ All tests are skipped until the implementation exists.
 import pytest
 
 
-pytestmark = pytest.mark.skip(reason="sidebar.py not yet created -- Plan 02-02")
+# Tests enabled -- sidebar.py created in Plan 02-02
 
 
 def test_render_sidebar_connected():
