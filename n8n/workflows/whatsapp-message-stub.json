@@ -1,0 +1,52 @@
+{
+  "name": "WhatsApp Message Stub (Phase 4 Chatbot)",
+  "nodes": [
+    {
+      "id": "webhook-messages-upsert",
+      "name": "Receive MESSAGES_UPSERT",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "whatsapp-messages-upsert",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-inbound/messages-upsert",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "stub-noop",
+      "name": "Stub - Phase 4 wires chatbot here",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [480, 300],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Receive MESSAGES_UPSERT": {
+      "main": [
+        [
+          {
+            "node": "Stub - Phase 4 wires chatbot here",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "whatsapp"
+    },
+    {
+      "name": "chatbot"
+    }
+  ]
+}
