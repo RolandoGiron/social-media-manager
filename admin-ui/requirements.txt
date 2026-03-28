@@ -3,3 +3,7 @@ psycopg2-binary
 pandas
 openpyxl
 python-dotenv
+requests
+pytest>=7.0
+pytest-mock
+requests-mock
