@@ -35,6 +35,10 @@ El dueño de la clínica puede lanzar una promoción dirigida — que llega a Wh
 - Pagos / facturación — fuera del MVP
 - Integración con sistemas de gestión médica existentes — no requerido para v1
 
+## Current State
+
+Phase 1 complete — Docker Compose infrastructure stack deployed with 6 services (PostgreSQL, Redis, n8n, Evolution API, Streamlit, Caddy), 11-table schema, and operational scripts. Meta App Review deferred (submit before Phase 6 to avoid blocking social publishing).
+
 ## Context
 
 - **Vertical objetivo:** Clínicas dermatológicas; generalizable a otros negocios físicos en v2
@@ -90,4 +94,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after initialization*
+*Last updated: 2026-03-28 after Phase 1 (infrastructure-foundation) completion*
