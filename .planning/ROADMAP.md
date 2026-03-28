@@ -46,7 +46,12 @@ Plans:
   2. Session status (connected/disconnected) is visible on every page of the admin UI
   3. When the WhatsApp session drops, the admin receives an alert within 5 minutes without manual checking
   4. A message sent via n8n test workflow is received on the clinic's WhatsApp number and vice versa
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Evolution API client, env vars, test scaffolds
+- [ ] 02-02-PLAN.md — Streamlit multipage UI with sidebar status and QR page
+- [ ] 02-03-PLAN.md — n8n workflows for disconnect alert and message stub
 **UI hint**: yes
 
 ### Phase 3: CRM Core
@@ -115,7 +120,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Infrastructure Foundation | 0/2 | Planning complete | - |
-| 2. WhatsApp Core | 0/? | Not started | - |
+| 2. WhatsApp Core | 0/3 | Planning complete | - |
 | 3. CRM Core | 0/? | Not started | - |
 | 4. AI Chatbot + Appointment Booking | 0/? | Not started | - |
 | 5. Campaign Blast | 0/? | Not started | - |
