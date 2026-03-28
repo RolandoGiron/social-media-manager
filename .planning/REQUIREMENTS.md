@@ -9,8 +9,8 @@
 
 ### Infrastructure & WhatsApp Session (INFRA)
 
-- [ ] **INFRA-01**: Administrador puede conectar/reconectar sesión WhatsApp de la clínica escaneando QR desde la UI
-- [ ] **INFRA-02**: Sistema muestra estado de sesión WhatsApp (conectada/desconectada) visible en todo momento
+- [x] **INFRA-01**: Administrador puede conectar/reconectar sesión WhatsApp de la clínica escaneando QR desde la UI
+- [x] **INFRA-02**: Sistema muestra estado de sesión WhatsApp (conectada/desconectada) visible en todo momento
 - [ ] **INFRA-03**: Sistema detecta automáticamente desconexión de sesión y envía alerta al administrador
 
 ### CRM — Gestión de Pacientes (CRM)

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered (discuss mode)
-last_updated: "2026-03-28T07:31:25.186Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-28T11:03:45.774Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 0
+  total_plans: 5
+  completed_plans: 3
+  percent: 60
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** El dueño de la clínica puede lanzar una promoción dirigida — que llega a WhatsApp de los pacientes relevantes Y se publica en redes sociales — sin tocar ningún sistema manualmente.
-**Current focus:** Phase 01 — infrastructure-foundation
+**Current focus:** Phase 02 — whatsapp-core
 
 ## Current Position
 
 Phase: 2
-Plan: Not started
-Status: Ready to execute
+Plan: 1 of 3 complete
+Status: Executing
 Last activity: 2026-03-28
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01 P02 | 5min | 2 tasks | 1 files |
+| Phase 02 P01 | 3min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,7 @@ Recent decisions affecting current work:
 - [Init]: OpenAI gpt-4o-mini as default LLM (Ollama optional if VPS has 8+ GB RAM confirmed in Phase 4)
 - [Init]: Single-tenant v1 — reduces MVP complexity; multi-tenant deferred to v2
 - [Phase 01]: Meta App Review deferred by user -- will submit later. Phase 6 (Social Publishing) blocked until approved (2-6 weeks typical). Buffer API available as fallback.
+- [Phase 02]: EvolutionAPIClient uses env vars as defaults with constructor override for testability
 
 ### Pending Todos
 
@@ -79,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T07:31:25.181Z
-Stopped at: Phase 2 context gathered (discuss mode)
-Resume file: .planning/phases/02-whatsapp-core/02-CONTEXT.md
+Last session: 2026-03-28T11:03:45.769Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
