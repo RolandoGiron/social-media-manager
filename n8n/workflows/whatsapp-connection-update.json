@@ -1,0 +1,137 @@
+{
+  "name": "WhatsApp Connection Update Alert",
+  "nodes": [
+    {
+      "id": "webhook-connection-update",
+      "name": "Receive CONNECTION_UPDATE",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "whatsapp-connection-update",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-inbound/connection-update",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "if-disconnect",
+      "name": "Is Disconnect?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [480, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "combinator": "or"
+          },
+          "conditions": [
+            {
+              "id": "condition-close",
+              "leftValue": "={{ $json.data.state }}",
+              "rightValue": "close",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-connecting",
+              "leftValue": "={{ $json.data.state }}",
+              "rightValue": "connecting",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-alert",
+      "name": "Send Alert to Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "=http://evolution-api:8080/message/sendText/{{ $env.EVOLUTION_INSTANCE_NAME || 'clinic-main' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"text\": \"\\u26a0\\ufe0f La sesion de WhatsApp se desconecto a las {{ $now.format('yyyy-MM-dd HH:mm') }}.\\n\\nEscanea el QR para reconectar:\\nhttps://{{ $env.ADMIN_SUBDOMAIN }}.{{ $env.DOMAIN }}/WhatsApp\\n\\nEstado reportado: {{ $json.data.state }}\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "log-reconnection",
+      "name": "Log Reconnection",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [720, 400],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Receive CONNECTION_UPDATE": {
+      "main": [
+        [
+          {
+            "node": "Is Disconnect?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Disconnect?": {
+      "main": [
+        [
+          {
+            "node": "Send Alert to Admin",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Reconnection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "whatsapp"
+    },
+    {
+      "name": "infra"
+    }
+  ]
+}

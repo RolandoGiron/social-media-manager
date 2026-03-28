@@ -61,6 +61,11 @@ services:
       N8N_PROTOCOL: https
       WEBHOOK_URL: https://${N8N_SUBDOMAIN}.${DOMAIN}
       N8N_DEFAULT_CONCURRENCY: 8
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
+      EVOLUTION_INSTANCE_NAME: ${EVOLUTION_INSTANCE_NAME:-clinic-main}
+      ADMIN_WHATSAPP_NUMBER: ${ADMIN_WHATSAPP_NUMBER}
+      DOMAIN: ${DOMAIN}
+      ADMIN_SUBDOMAIN: ${ADMIN_SUBDOMAIN}
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
       interval: 30s
