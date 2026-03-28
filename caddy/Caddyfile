@@ -1,0 +1,18 @@
+{
+    email {$ACME_EMAIL:admin@example.com}
+}
+
+{$N8N_SUBDOMAIN:n8n}.{$DOMAIN:localhost} {
+    reverse_proxy n8n:5678
+}
+
+{$EVOLUTION_SUBDOMAIN:wa}.{$DOMAIN:localhost} {
+    reverse_proxy evolution-api:8080
+}
+
+{$ADMIN_SUBDOMAIN:admin}.{$DOMAIN:localhost} {
+    basicauth {
+        {$ADMIN_USER:admin} {$ADMIN_PASSWORD_HASH}
+    }
+    reverse_proxy streamlit:8501
+}
