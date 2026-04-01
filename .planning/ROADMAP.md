@@ -67,7 +67,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Database helper module, pure business logic (phone normalization, CSV parsing, template variables), and test suite
-- [ ] 03-02-PLAN.md — Pacientes page: patient import, list, search, filter, pagination, and tag management
+- [x] 03-02-PLAN.md — Pacientes page: patient import, list, search, filter, pagination, and tag management
 - [ ] 03-03-PLAN.md — Plantillas page: template editor with live preview, navigation wiring, and visual checkpoint
 **UI hint**: yes
 
