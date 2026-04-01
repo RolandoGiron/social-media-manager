@@ -63,12 +63,12 @@ Plans:
   2. Admin can search patients by name or phone number and filter by tag/segment from the patient list
   3. Admin can create a custom tag (e.g., "acne"), assign it to patients, and filter by that tag to see only matching patients
   4. Admin can create a message template with `{{nombre}}` and `{{fecha}}` variables and preview the rendered output before saving
-**Plans:** 2/3 plans executed
+**Plans:** 3 plans
 
 Plans:
 - [x] 03-01-PLAN.md — Database helper module, pure business logic (phone normalization, CSV parsing, template variables), and test suite
-- [ ] 03-02-PLAN.md — Pacientes page: patient import, list, search, filter, pagination, and tag management
-- [x] 03-03-PLAN.md — Plantillas page: template editor with live preview, navigation wiring, and visual checkpoint
+- [x] 03-02-PLAN.md — Pacientes page: patient import, list, search, filter, pagination, and tag management
+- [ ] 03-03-PLAN.md — Plantillas page: template editor with live preview, navigation wiring, and visual checkpoint
 **UI hint**: yes
 
 ### Phase 4: AI Chatbot + Appointment Booking
@@ -126,7 +126,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Infrastructure Foundation | 0/2 | Planning complete | - |
 | 2. WhatsApp Core | 2/3 | In Progress|  |
-| 3. CRM Core | 2/3 | In Progress|  |
+| 3. CRM Core | 0/3 | Planning complete | - |
 | 4. AI Chatbot + Appointment Booking | 0/? | Not started | - |
 | 5. Campaign Blast | 0/? | Not started | - |
 | 6. Social Media Publishing | 0/? | Not started | - |
