@@ -1,7 +1,8 @@
 ---
 phase: 3
 slug: crm-core
-status: draft
+status: approved
+reviewed_at: 2026-04-01T00:00:00Z
 shadcn_initialized: false
 preset: none
 created: 2026-04-01
@@ -55,6 +56,8 @@ Streamlit controls font rendering. These roles map to specific Streamlit API cal
 | Caption / metadata | `st.caption("text")` | Row counts ("Mostrando 1-25 de 142 pacientes"), timestamps |
 | Status badge | `st.markdown(":green[text]")` | Import status indicators |
 
+**Line height:** Body text line height is Streamlit's default (~1.5). No override is applied. This is an intentional decision -- Streamlit's built-in line height provides adequate readability for data-heavy admin screens.
+
 ---
 
 ## Color
@@ -69,6 +72,8 @@ Streamlit uses its own theme. This contract defines semantic color usage through
 | Info (blue) | `st.info()` | Empty states, instructional messages |
 | Tag colors | `st.markdown()` with inline HTML color from `tags.color` column | Tag chips in patient list (default: `#6366f1` indigo) |
 
+**60/30/10 color distribution:** Dominant (60%): Streamlit default surface (white in light mode, dark grey in dark mode) -- all page backgrounds and content areas. Secondary (30%): sidebar navigation background and card-like containers (`st.container`, `st.expander`). Accent (10%): `st.success`, `st.warning`, `st.error`, and `st.info` status colors, used sparingly and only for actionable feedback (import results, validation errors, confirmation messages). Tag color chips in the patient list are the only non-status use of color.
+
 **Import status badges (D-01):**
 
 | Badge | Display | Color mechanism |
@@ -82,6 +87,8 @@ Streamlit uses its own theme. This contract defines semantic color usage through
 ## Component Inventory
 
 ### Page: Pacientes (`pages/3_Pacientes.py`)
+
+**Focal point:** Primary focal point is the paginated patient data table -- this is the element the user's eye should land on first. Secondary anchor is the "Importar pacientes" CTA button in the header row, providing the primary action entry point.
 
 **Layout structure (top to bottom):**
 
@@ -99,7 +106,7 @@ Streamlit uses its own theme. This contract defines semantic color usage through
 | Default (has patients) | Filter bar + paginated data table + page caption |
 | Empty (no patients) | Empty state message + prominent import CTA |
 | Import: file selection | `st.file_uploader` accepting .csv, .xlsx, .xls |
-| Import: preview | Preview `st.dataframe` with Estado column + summary row + "Importar X nuevos" / "Cancelar" buttons |
+| Import: preview | Preview `st.dataframe` with Estado column + summary row + "Importar X nuevos" / "Descartar importacion" buttons |
 | Import: processing | `st.spinner("Importando pacientes...")` |
 | Import: complete | `st.success` with counts + auto-return to patient list |
 | Rows selected | Bulk action bar appears below table |
@@ -135,7 +142,7 @@ Using `st.columns([1, 1])`:
 | `st.text_input("Nombre de plantilla")` | `st.subheader("Vista previa")` |
 | `st.selectbox("Categoria", ["general", "promocion", "recordatorio"])` | Rendered message body with sample values |
 | `st.text_area("Cuerpo del mensaje", height=300)` | Variables detected shown as chips below preview |
-| `st.button("Guardar plantilla")` / `st.button("Cancelar")` | |
+| `st.button("Guardar plantilla")` / `st.button("Descartar cambios")` | |
 
 **States:**
 
@@ -170,7 +177,7 @@ All copy is in Spanish, consistent with existing Phase 2 UI.
 | Import preview heading | "Vista previa de importacion" |
 | Import summary | "{nuevos} nuevos / {duplicados} duplicados ignorados / {errores} con errores" |
 | Import confirm CTA | "Importar {N} nuevos" |
-| Import cancel | "Cancelar" |
+| Import cancel | "Descartar importacion" |
 | Import success | "Se importaron {N} pacientes exitosamente." |
 | Import error (bad file) | "El archivo no tiene el formato esperado. Asegurate de incluir columnas: nombre, apellido, telefono." |
 | Tag create CTA | "Crear etiqueta" |
@@ -198,7 +205,7 @@ All copy is in Spanish, consistent with existing Phase 2 UI.
 | Preview heading | "Vista previa" |
 | Preview variables caption | "Variables detectadas: {list}" |
 | Save CTA | "Guardar plantilla" |
-| Cancel | "Cancelar" |
+| Editor cancel | "Descartar cambios" |
 | Save success | "Plantilla guardada exitosamente." |
 | Validation: missing name | "El nombre de la plantilla es obligatorio." |
 | Validation: empty body | "El cuerpo del mensaje no puede estar vacio." |
@@ -234,9 +241,9 @@ All copy is in Spanish, consistent with existing Phase 2 UI.
   v  parsing complete
 [Preview table with Estado column]
 [Summary: "X nuevos / Y duplicados / Z errores"]
-[Buttons: "Importar X nuevos" | "Cancelar"]
+[Buttons: "Importar X nuevos" | "Descartar importacion"]
   |
-  |-- click "Cancelar" --> [Back to patient list]
+  |-- click "Descartar importacion" --> [Back to patient list]
   |-- click "Importar X nuevos" --> [st.spinner("Importando...")]
                                       |
                                       v
@@ -283,6 +290,11 @@ All copy is in Spanish, consistent with existing Phase 2 UI.
                               |
                               v
                             [st.success + return to template list]
+
+[Editor view]
+  |
+  v  click "Descartar cambios"
+[Return to template list without saving]
 ```
 
 ---
@@ -344,9 +356,9 @@ Navigation group "CRM" is new. Existing groups preserved.
 | Action | Confirmation Approach | Copy |
 |--------|----------------------|------|
 | Delete template | `st.button` inside `st.warning` container | "Estas seguro de que deseas eliminar '{name}'? Esta accion no se puede deshacer." |
-| Delete tag (blocked) | No confirmation needed — action is blocked | "Esta etiqueta esta asignada a N pacientes. Elimina las asignaciones primero." |
+| Delete tag (blocked) | No confirmation needed -- action is blocked | "Esta etiqueta esta asignada a N pacientes. Elimina las asignaciones primero." |
 | Delete tag (unassigned) | `st.button` with warning text | "Eliminar etiqueta '{name}'?" |
-| Cancel import | No confirmation — import not yet committed | "Cancelar" returns to patient list |
+| Discard import | No confirmation -- import not yet committed | "Descartar importacion" returns to patient list |
 
 ---
 
@@ -354,7 +366,7 @@ Navigation group "CRM" is new. Existing groups preserved.
 
 | Registry | Blocks Used | Safety Gate |
 |----------|-------------|-------------|
-| Not applicable | Streamlit project — no shadcn registry | N/A |
+| Not applicable | Streamlit project -- no shadcn registry | N/A |
 
 ---
 
