@@ -2,7 +2,7 @@
 phase: 3
 slug: crm-core
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-04-01
 ---
@@ -38,14 +38,12 @@ created: 2026-04-01
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 3-01-01 | 01 | 1 | CRM-01 | unit | `pytest src/tests/test_csv_import.py -x -q` | ❌ W0 | ⬜ pending |
-| 3-01-02 | 01 | 1 | CRM-01 | unit | `pytest src/tests/test_phone_normalize.py -x -q` | ❌ W0 | ⬜ pending |
-| 3-01-03 | 01 | 2 | CRM-01 | integration | `pytest src/tests/test_import_db.py -x -q` | ❌ W0 | ⬜ pending |
-| 3-02-01 | 02 | 1 | CRM-02 | unit | `pytest src/tests/test_patient_search.py -x -q` | ❌ W0 | ⬜ pending |
-| 3-02-02 | 02 | 1 | CRM-02 | unit | `pytest src/tests/test_tag_filter.py -x -q` | ❌ W0 | ⬜ pending |
-| 3-02-03 | 02 | 2 | CRM-03 | unit | `pytest src/tests/test_tag_crud.py -x -q` | ❌ W0 | ⬜ pending |
-| 3-03-01 | 03 | 1 | WA-01 | unit | `pytest src/tests/test_template_crud.py -x -q` | ❌ W0 | ⬜ pending |
-| 3-03-02 | 03 | 1 | WA-01 | unit | `pytest src/tests/test_template_render.py -x -q` | ❌ W0 | ⬜ pending |
+| 3-01-01 | 01 | 1 | CRM-01 | unit | `pytest src/tests/test_patients.py -x -q` | ✅ Plan 01 Task 1 | ⬜ pending |
+| 3-01-02 | 01 | 1 | WA-01 | unit | `pytest src/tests/test_templates.py -x -q` | ✅ Plan 01 Task 1 | ⬜ pending |
+| 3-01-03 | 01 | 1 | CRM-02, CRM-03 | unit | `pytest src/tests/test_database.py -x -q` | ✅ Plan 01 Task 2 | ⬜ pending |
+| 3-02-01 | 02 | 2 | CRM-01, CRM-02, CRM-03 | syntax | `python -m py_compile pages/3_Pacientes.py` | ✅ Plan 02 Task 1 | ⬜ pending |
+| 3-03-01 | 03 | 2 | WA-01 | syntax | `python -m py_compile pages/4_Plantillas.py` | ✅ Plan 03 Task 1 | ⬜ pending |
+| 3-03-02 | 03 | 2 | D-12 | syntax | `python -m py_compile app.py` | ✅ Plan 03 Task 2 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -53,15 +51,12 @@ created: 2026-04-01
 
 ## Wave 0 Requirements
 
-- [ ] `src/tests/test_phone_normalize.py` — unit tests for MX phone normalization logic (CRM-01)
-- [ ] `src/tests/test_csv_import.py` — unit tests for CSV parsing and duplicate detection (CRM-01)
-- [ ] `src/tests/test_import_db.py` — integration tests for batch insert with conflict handling (CRM-01)
-- [ ] `src/tests/test_patient_search.py` — unit tests for search query construction (CRM-02)
-- [ ] `src/tests/test_tag_filter.py` — unit tests for tag-based filtering (CRM-02)
-- [ ] `src/tests/test_tag_crud.py` — unit tests for tag create/assign/remove operations (CRM-03)
-- [ ] `src/tests/test_template_crud.py` — unit tests for template save/load/delete (WA-01)
-- [ ] `src/tests/test_template_render.py` — unit tests for `{{nombre}}` / `{{fecha}}` variable rendering (WA-01)
-- [ ] `src/tests/conftest.py` — shared fixtures: test DB connection, sample patient rows, sample CSV bytes
+Plan 01 creates all test files as part of its TDD workflow. No separate Wave 0 scaffolding is needed.
+
+- [x] `src/tests/test_patients.py` — unit tests for phone normalization, CSV parsing, preview builder (Plan 01 Task 1)
+- [x] `src/tests/test_templates.py` — unit tests for variable extraction and preview rendering (Plan 01 Task 1)
+- [x] `src/tests/test_database.py` — unit tests for all database.py CRUD functions with mocked DB (Plan 01 Task 2)
+- [x] `src/tests/conftest.py` — shared fixtures: sample CSV bytes, mock DB connection (Plan 01 Tasks 1+2)
 
 ---
 
@@ -79,11 +74,11 @@ created: 2026-04-01
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending
