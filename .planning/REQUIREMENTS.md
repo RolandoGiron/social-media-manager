@@ -15,13 +15,13 @@
 
 ### CRM — Gestión de Pacientes (CRM)
 
-- [ ] **CRM-01**: Administrador puede importar pacientes desde archivo CSV/Excel con normalización automática de números telefónicos (formato MX +52) y detección de duplicados
-- [ ] **CRM-02**: Administrador puede ver lista paginada de pacientes con búsqueda por nombre/teléfono y filtro por segmento/etiqueta
-- [ ] **CRM-03**: Administrador puede crear etiquetas personalizadas y asignarlas a pacientes para segmentación (ej: acné, rosácea, facial, postoperatorio)
+- [x] **CRM-01**: Administrador puede importar pacientes desde archivo CSV/Excel con normalización automática de números telefónicos (formato MX +52) y detección de duplicados
+- [x] **CRM-02**: Administrador puede ver lista paginada de pacientes con búsqueda por nombre/teléfono y filtro por segmento/etiqueta
+- [x] **CRM-03**: Administrador puede crear etiquetas personalizadas y asignarlas a pacientes para segmentación (ej: acné, rosácea, facial, postoperatorio)
 
 ### WhatsApp — Mensajería y Campañas (WA)
 
-- [ ] **WA-01**: Administrador puede crear plantillas de mensaje con variables dinámicas ({{nombre}}, {{fecha}}) y previsualizar antes de guardar
+- [x] **WA-01**: Administrador puede crear plantillas de mensaje con variables dinámicas ({{nombre}}, {{fecha}}) y previsualizar antes de guardar
 - [ ] **WA-02**: Administrador puede enviar broadcast masivo a un segmento de pacientes seleccionado, con rate limiting automático (delays con jitter) para prevenir baneo de número
 - [ ] **WA-03**: Sistema muestra paso de confirmación antes de envío masivo indicando número de destinatarios ("Estás a punto de enviar a N pacientes. ¿Confirmar?")
 - [ ] **WA-04**: Administrador puede cancelar un broadcast en progreso
