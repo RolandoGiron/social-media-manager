@@ -1,3 +1,5 @@
+import io
+
 import pytest
 from unittest import mock
 
@@ -19,3 +21,21 @@ def mock_session_state():
     state = {}
     with mock.patch("streamlit.session_state", state):
         yield state
+
+
+@pytest.fixture
+def sample_csv_bytes():
+    """BytesIO with valid CSV content for import testing."""
+    content = b"nombre,apellido,telefono\nAna,Lopez,5512345678\nCarlos,Garcia,5587654321\n"
+    buf = io.BytesIO(content)
+    buf.name = "pacientes.csv"
+    return buf
+
+
+@pytest.fixture
+def sample_csv_missing_col():
+    """BytesIO with CSV missing the telefono column."""
+    content = b"nombre,apellido\nAna,Lopez\n"
+    buf = io.BytesIO(content)
+    buf.name = "pacientes.csv"
+    return buf
