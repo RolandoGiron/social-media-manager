@@ -11,7 +11,7 @@
 }
 
 {$ADMIN_SUBDOMAIN:admin}.{$DOMAIN:localhost} {
-    basicauth {
+    basic_auth {
         {$ADMIN_USER:admin} {$ADMIN_PASSWORD_HASH}
     }
     reverse_proxy streamlit:8501

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-04-01T16:02:02.053Z"
-last_activity: 2026-04-01
+stopped_at: Phase 3 UI-SPEC approved
+last_updated: "2026-04-01T15:56:45.454Z"
+last_activity: 2026-04-01 -- Phase 03 execution started
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 5
   percent: 60
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** El dueño de la clínica puede lanzar una promoción dirigida — que llega a WhatsApp de los pacientes relevantes Y se publica en redes sociales — sin tocar ningún sistema manualmente.
-**Current focus:** Phase 02 — whatsapp-core
+**Current focus:** Phase 03 — crm-core
 
 ## Current Position
 
-Phase: 2
-Plan: 3 of 3 complete
-Status: Ready to execute
-Last activity: 2026-04-01
+Phase: 03 (crm-core) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 03
+Last activity: 2026-04-01 -- Phase 03 execution started
 
 Progress: [██████░░░░] 60%
 
@@ -55,7 +55,6 @@ Progress: [██████░░░░] 60%
 | Phase 01 P02 | 5min | 2 tasks | 1 files |
 | Phase 02 P01 | 3min | 3 tasks | 10 files |
 | Phase 02 P03 | 5min | 2 tasks | 3 files |
-| Phase 03 P01 | 3min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -71,8 +70,6 @@ Recent decisions affecting current work:
 - [Phase 01]: Meta App Review deferred by user -- will submit later. Phase 6 (Social Publishing) blocked until approved (2-6 weeks typical). Buffer API available as fallback.
 - [Phase 02]: EvolutionAPIClient uses env vars as defaults with constructor override for testability
 - [Phase 02]: Alert fires once per event with no retry; silent failure if clinic number disconnected (D-08, D-09)
-- [Phase 03]: psycopg2-binary installed on host for test execution outside Docker
-- [Phase 03]: Database helper uses try/finally per-function connection management (no connection pooling yet)
 
 ### Pending Todos
 
@@ -86,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T16:02:02.049Z
-Stopped at: Completed 03-01-PLAN.md
-Resume file: None
+Last session: 2026-04-01T07:40:08.786Z
+Stopped at: Phase 3 UI-SPEC approved
+Resume file: .planning/phases/03-crm-core/03-UI-SPEC.md
