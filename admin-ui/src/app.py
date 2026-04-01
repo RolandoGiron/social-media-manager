@@ -9,6 +9,12 @@ render_sidebar()
 # Page routing using st.navigation
 dashboard = st.Page("pages/1_Dashboard.py", title="Dashboard", icon=":material/dashboard:")
 whatsapp = st.Page("pages/2_WhatsApp.py", title="WhatsApp", icon=":material/chat:")
+pacientes = st.Page("pages/3_Pacientes.py", title="Pacientes", icon=":material/people:")
+plantillas = st.Page("pages/4_Plantillas.py", title="Plantillas", icon=":material/article:")
 
-pg = st.navigation({"Principal": [dashboard], "Conexion": [whatsapp]})
+pg = st.navigation({
+    "Principal": [dashboard],
+    "CRM": [pacientes, plantillas],
+    "Conexion": [whatsapp],
+})
 pg.run()
