@@ -61,9 +61,14 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Admin can upload a CSV/Excel file with 100+ patient rows and see them imported with phone numbers normalized to +52 MX format and duplicates flagged
   2. Admin can search patients by name or phone number and filter by tag/segment from the patient list
-  3. Admin can create a custom tag (e.g., "acné"), assign it to patients, and filter by that tag to see only matching patients
+  3. Admin can create a custom tag (e.g., "acne"), assign it to patients, and filter by that tag to see only matching patients
   4. Admin can create a message template with `{{nombre}}` and `{{fecha}}` variables and preview the rendered output before saving
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Database helper module, pure business logic (phone normalization, CSV parsing, template variables), and test suite
+- [ ] 03-02-PLAN.md — Pacientes page: patient import, list, search, filter, pagination, and tag management
+- [ ] 03-03-PLAN.md — Plantillas page: template editor with live preview, navigation wiring, and visual checkpoint
 **UI hint**: yes
 
 ### Phase 4: AI Chatbot + Appointment Booking
@@ -83,7 +88,7 @@ Plans:
 **Depends on**: Phase 3
 **Requirements**: WA-02, WA-03, WA-04
 **Success Criteria** (what must be TRUE):
-  1. Admin selects a patient segment and initiates a broadcast — a confirmation screen shows the exact recipient count ("Estás a punto de enviar a N pacientes. ¿Confirmar?") before any message is sent
+  1. Admin selects a patient segment and initiates a broadcast — a confirmation screen shows the exact recipient count ("Estas a punto de enviar a N pacientes. Confirmar?") before any message is sent
   2. A broadcast of 50+ messages is delivered with automatic delays between sends (3-8 seconds with jitter) and no messages are sent in bulk without pausing
   3. Admin can cancel a broadcast in progress and remaining messages are not sent
 **Plans**: TBD
@@ -121,7 +126,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Infrastructure Foundation | 0/2 | Planning complete | - |
 | 2. WhatsApp Core | 2/3 | In Progress|  |
-| 3. CRM Core | 0/? | Not started | - |
+| 3. CRM Core | 0/3 | Planning complete | - |
 | 4. AI Chatbot + Appointment Booking | 0/? | Not started | - |
 | 5. Campaign Blast | 0/? | Not started | - |
 | 6. Social Media Publishing | 0/? | Not started | - |
