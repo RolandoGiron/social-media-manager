@@ -4,12 +4,12 @@ import re
 import pandas as pd
 
 
-def normalize_mx_phone(raw: str) -> tuple[str, str | None]:
-    """Normalize a Mexican phone number to E.164 format (+52XXXXXXXXXX).
+def normalize_sv_phone(raw: str) -> tuple[str, str | None]:
+    """Normalize a El Salvador phone number to E.164 format (+503XXXXXXXX).
 
     Returns (normalized, error_message). error_message is None if valid.
 
-    Mexico format: +52 followed by 10 digits (no "1" prefix since Aug 2020).
+    El Salvador format: +503 followed by 8 digits.
     """
     if not raw or not raw.strip():
         return "", "Numero invalido: (vacio)"
@@ -17,17 +17,14 @@ def normalize_mx_phone(raw: str) -> tuple[str, str | None]:
     # Strip all non-digit characters
     digits = re.sub(r"\D", "", raw)
 
-    # Remove country code if present
-    if digits.startswith("521") and len(digits) == 13:
-        # Old format with "1" -- strip it
+    # Remove country code if present (503XXXXXXXX)
+    if digits.startswith("503") and len(digits) == 11:
         digits = digits[3:]
-    elif digits.startswith("52") and len(digits) == 12:
-        digits = digits[2:]
 
-    if len(digits) != 10:
-        return "", f"Numero invalido: {raw} ({len(digits)} digitos, se esperan 10)"
+    if len(digits) != 8:
+        return "", f"Numero invalido: {raw} ({len(digits)} digitos, se esperan 8)"
 
-    return f"+52{digits}", None
+    return f"+503{digits}", None
 
 
 def parse_import_file(uploaded_file) -> pd.DataFrame:
@@ -69,7 +66,7 @@ def build_preview(df: pd.DataFrame, existing_phones: set[str]) -> pd.DataFrame:
     statuses = []
 
     for _, row in preview.iterrows():
-        phone_norm, error = normalize_mx_phone(str(row["telefono"]))
+        phone_norm, error = normalize_sv_phone(str(row["telefono"]))
         normalized.append(phone_norm)
         if error:
             statuses.append("Error")

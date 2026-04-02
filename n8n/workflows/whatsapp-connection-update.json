@@ -16,46 +16,74 @@
       }
     },
     {
-      "id": "if-disconnect",
-      "name": "Is Disconnect?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
+      "id": "switch-state",
+      "name": "Connection State",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
       "position": [480, 300],
       "parameters": {
-        "conditions": {
-          "options": {
-            "combinator": "or"
-          },
-          "conditions": [
+        "rules": {
+          "rules": [
             {
-              "id": "condition-close",
-              "leftValue": "={{ $json.data.state }}",
-              "rightValue": "close",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
+              "outputKey": "disconnect",
+              "conditions": {
+                "options": {
+                  "combinator": "or"
+                },
+                "conditions": [
+                  {
+                    "id": "condition-close",
+                    "leftValue": "={{ $json.data.state }}",
+                    "rightValue": "close",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "condition-connecting",
+                    "leftValue": "={{ $json.data.state }}",
+                    "rightValue": "connecting",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
               }
             },
             {
-              "id": "condition-connecting",
-              "leftValue": "={{ $json.data.state }}",
-              "rightValue": "connecting",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
+              "outputKey": "connected",
+              "conditions": {
+                "options": {
+                  "combinator": "and"
+                },
+                "conditions": [
+                  {
+                    "id": "condition-open",
+                    "leftValue": "={{ $json.data.state }}",
+                    "rightValue": "open",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
               }
             }
           ]
         },
-        "options": {}
+        "options": {
+          "fallbackOutput": "extra"
+        }
       }
     },
     {
-      "id": "send-alert",
-      "name": "Send Alert to Admin",
+      "id": "send-disconnect-alert",
+      "name": "Send Disconnect Alert",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, 200],
+      "position": [720, 150],
       "parameters": {
         "method": "POST",
         "url": "=http://evolution-api:8080/message/sendText/{{ $env.EVOLUTION_INSTANCE_NAME || 'clinic-main' }}",
@@ -83,11 +111,43 @@
       "retryOnFail": false
     },
     {
-      "id": "log-reconnection",
-      "name": "Log Reconnection",
+      "id": "send-connection-success",
+      "name": "Send Connection Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 350],
+      "parameters": {
+        "method": "POST",
+        "url": "=http://evolution-api:8080/message/sendText/{{ $env.EVOLUTION_INSTANCE_NAME || 'clinic-main' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"text\": \"WhatsApp conectado exitosamente a las {{ $now.format('yyyy-MM-dd HH:mm') }}.\\n\\nEl chatbot y las alertas estan activos.\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "log-other-state",
+      "name": "Log Other State",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [720, 400],
+      "position": [720, 500],
       "parameters": {}
     }
   ],
@@ -96,25 +156,32 @@
       "main": [
         [
           {
-            "node": "Is Disconnect?",
+            "node": "Connection State",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Is Disconnect?": {
+    "Connection State": {
       "main": [
         [
           {
-            "node": "Send Alert to Admin",
+            "node": "Send Disconnect Alert",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Log Reconnection",
+            "node": "Send Connection Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Other State",
             "type": "main",
             "index": 0
           }

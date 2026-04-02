@@ -1,0 +1,150 @@
+nombre,apellido,telefono,edad,enfermedad,fuente
+Francisco,Canales,77546650,33,Manchas Hipercrónicas,imagen_01
+Karla Ibet,Flores Sorto,77504095,25,Acne Popular,imagen_01
+Yesenia,Liliana Martinez,71705667,25,Acne,imagen_01
+Cindy Lorena,Sorto Villalobos,79380902,29,Acne Caida de Pelo,imagen_01
+Meybi,Esperanza Hernández,60721484,44,Melasma,imagen_01
+Maria,Martinez,70682004,44,Melasma,imagen_01
+Sandra Guadalupe,Gómez Reyes,61650112,14,Acne,imagen_01
+Javier,Ayala,61007322,34,Acrocordones (Axila),imagen_01
+Aylen Idalia,Herrera Chicas,76837125,18,Acne,imagen_01
+Jesi Mariela,Paiz Gaitan,74897611,20,Acne,imagen_01
+Mirna Lorena,Roque Portillo,78854818,63,Melasma,imagen_01
+Yancy,Ramirez,77761136,26,Acne,imagen_01
+Angel,Martinez,99737973,47,Vitiligo,imagen_02
+Leticia, Escolero de Corea,78813530,65,Melasma,imagen_02
+Yenifer,Otero,75005940,27,Cicatrices,imagen_02
+Sandra,Noemy Hernandez,79216111,26,Acne,imagen_02
+Ovidio,Chavarria,75353753,64,Tiña Ungueal,imagen_02
+Yoselin,Segovia,79870109,30,Acne,imagen_02
+Lesly,Maryori,77246097,18,Caida de Pelo,imagen_02
+Yehovany,Castillo,70672629,,Acne,imagen_02
+Danilo Mauricio,Palomo Iraheta,78970944,18,Acne,imagen_02
+Rosa Isamar,Medina Canales,60467013,34,Melasma,imagen_02
+Fredy,Zelaya,,,, imagen_02
+Marina,Granado,76584959,28,Cicatrices,imagen_02
+Victoria Valentina,Martinez Rodriguez,76581935,3.5,Tiña Corporis,imagen_03
+Flor de,Jesús Fuentes,76701825,37,Melasma,imagen_03
+Juaquin,Alejandro Girón,76022424,18,Candidiasis,imagen_03
+Isaias,Villatoro Sudamina,76829314,24,Sudamina,imagen_03
+Emely Dayana,Saravia López,72302007,18,Acne,imagen_03
+José,Adrian Canales,79269171,85,Manchas Oscuras,imagen_03
+Yessica,Yamilet Sales,73205131,30,Tiña Pedis,imagen_03
+Lilian,Yamileth Campo,79105610,41,Herpes Zoster,imagen_03
+Ledys Monjivel,Guevara Claro,72540403,37,Psoriasis,imagen_03
+Julio,Cesar Rivas,75961826,82,Tiña Corporis,imagen_03
+Sonia,López,70361892700,46,Manchas Hipercrónicas Brazos,imagen_03
+Ana Hilda,Martinez Meléndez,,55,Dermatitis,imagen_03
+Cesar,Ariel Godoy,76820721,17,Acne,imagen_04
+Ariana,Samary Meléndez,79395899,9,Acne,imagen_04
+Oscar Francisco,Ramirez Gómez,78651424,6,Alopecia Areata,imagen_04
+Blanca,Segovia Sotelo,69834773,57,Manchas Oscuras,imagen_04
+Andrés,Gutierrez,74859483,37,Cicatrices,imagen_04
+Ivan,Alonso Villatoro,79445235,15,Acne Juvenil,imagen_04
+Rhina Maricela,Meléndez Rivera,68542386,49,Acrocordones (Verrugas),imagen_04
+Lilian,Moya,76239851,18,Acne,imagen_04
+Yeferson,Esau Bermudez,72972030,19,Acne,imagen_04
+Mario,Alfredo Martinez,74852322,39,Vitiligo,imagen_04
+Rudy,Alfredo González,76779705,20,Acne,imagen_04
+Kevin,Giron,70465738,24,Acne,imagen_04
+Rina Maricela,Zapata de González,76069019,48,,imagen_05
+Hector,Antonio Gómez,75290841,53,Vitiligo,imagen_05
+Yeily,Gómez,77995708,18,Acne,imagen_05
+Keylem,Nicole Gómez,70693474,19,Acne,imagen_05
+Carlos,Humberto Sorto,78779167,55,Manchas,imagen_05
+Leydy,Cordero,76012882,27,Dermatitis de Contacto,imagen_05
+Roberto Antonio,Cruz Flores,79262779,,Tiña Versicolor,imagen_05
+Any Vidael,Rodas Peña,75587968,20,,imagen_05
+Danilo Mauricio,Palomo Iraheta,78970944,,Acne Popular,imagen_05
+Estefany,González,74872745,17,,imagen_05
+Stefany,Guadalupe Hernández,75461342,22,Dermatitis,imagen_05
+Wilfredo,Martinez,70358576100,27,Cicatriz Queloide,imagen_06
+Claudia,Machado,73583677,45,Melasma,imagen_06
+Maria José,Cruz Portillo,74672052,19,Acne,imagen_06
+Zuleymi,Sarai Constana,75477118,30,Melasma,imagen_06
+Dimora Elizabet,Juarez Portillo,75280402,37,Melasma,imagen_06
+Sindy,Odalina Linares,70483359,33,Melasma,imagen_06
+Reina,Diaz,72451344,39,Melasma,imagen_06
+Ana,Francisca Escobar,,,Manchas Solares,imagen_06
+Manuel,Molina,717036768,26,,imagen_06
+Reina,Isabel Romero,77566329,43,Acrocordones,imagen_06
+Blanca,Estela Cruz,76821466,37,Acne,imagen_07
+Josseline Daniela,Orellana Guevara,74701832,15,Acne Pustuloso,imagen_07
+Josseline Alejandra,Zepeda López,69677133,28,Acne Rosácea,imagen_07
+Candida,Nely Fernández,73763032,48,Piel Grasosa,imagen_07
+Ariana,Lisbeth Flores,78256179,16,Acne Juvenil,imagen_07
+Evelin,Guadalupe Pineda,76807958,26,Piel Grasosa,imagen_07
+Rebeca,Martinez,76666403,30,Melasma,imagen_07
+Roxana,Yaneth Palacios,72776099,17,Acne,imagen_08
+Maria,Evelin Alfaro,74714339,20,Acne Pustuloso,imagen_08
+Josué,Sanchez,78781910,24,Acne,imagen_08
+Jonatha,David Gómez,70578711,19,Acne,imagen_08
+Marco,Alejandro Henrique,75070359,15,Acne,imagen_08
+Angely Gissell,Quintanilla Quintanilla,77304058,11,Acne,imagen_08
+Ashley,Canales,74890215,24,,imagen_08
+Omar,Alexander Quintanilla,76071388,24,Cicatrices / Acne,imagen_08
+Marian Roxana,Gómez Gómez,79179177,21,Sudamina,imagen_08
+Nicol,Jasmin Cruz,70854539,,Acne,imagen_08
+Yeni,Edith Flores,72610097,24,Acne Leve,imagen_08
+Ernestina,Reyes,75518472,56,Manchas Oscuras,imagen_08
+Esmeralda,Arely Espinal,79631985,23,Acne,imagen_08
+Elisa,Maidely Castillo,70414634,14,Acne Juvenil,imagen_09
+Yamileth,Benitez,73181041,16,Acne,imagen_09
+Magali,Lisset Perdomo,77354394,39,Acne,imagen_09
+Kelyn Lisset,Gómez Arqueta,72867069,45,Acne Hormonal,imagen_09
+Rosi,Noemy Arqueta,74790222,38,Melasma,imagen_09
+José,Narciso Flores,69872653,27,Melasma y Acne,imagen_09
+Estefany,Elizabeth Rodriguez,77351565,17,Acne Vulgar,imagen_09
+Vilma Elizabeth,Prudencio Beniks,76262844,25,Acne,imagen_09
+Leydy,Victoria Cruz,71135092,20,Acne,imagen_09
+Uziel,Antonio Reyes,75065728,13,Acne,imagen_09
+Salvador,Lopez,72763166,56,Rejuvenecimiento Facial,imagen_09
+Brenda,Yasaira Hernández,63072376,29,Acne,imagen_09
+Eliza,Castillo,70414634,14,Acne,imagen_09
+Kelly Elizabeth,Umaña Hernández,79239248,18,Fotodermatosis,imagen_10
+Magaly,Lisset Perdomo,77354394,39,Acne Comedónico,imagen_10
+Norma Jaqueline,Delsi Moreno,76764539,41,Sudamina,imagen_10
+Katherine,Estefany Arriaga,78020413,33,Manchas Crónicas / Vitiligo,imagen_10
+Crisia,Arqueta,79017893,34,Lunares,imagen_10
+René,Ramirez,72005890,35,Dermatitis de Contacto,imagen_10
+Brayan Alberto,Sorto Chavez,,19,Acne Juvenil,imagen_10
+Silvia,Antonia Girón,79084080,54,,imagen_10
+Yolanda,Graciela Zelaya,78858932,54,Melasma,imagen_10
+Emily Alejandra,Benitez Vásquez,60505708,25,Acne,imagen_10
+Rosa,Amparo Sanchez,75019329,47,Dermatitis de Contacto,imagen_10
+Cristians Alexander,Garcia Zelaya,78858932,16,,imagen_10
+Blanca,Margarita Sanchez,76390101,55,Tiña de Uñas,imagen_10
+Marisol,Hernández,72080425,51,Vitiligo,imagen_11
+Katherine,Ramón,5939874171750,31,Vitiligo,imagen_11
+Elisa,Maidely Castillo,70414634,14,Acne,imagen_11
+Consuelo Maribel,Amaya de Zelaya,74998612,46,Melasma,imagen_11
+Iris,Ibania Villalta,70682000,37,Tiña Versicolor,imagen_11
+Yamileth,Benitez,73181041,16,Acne,imagen_11
+Kelyn Liseth,Gómez Arqueta,72867069,45,Acne,imagen_11
+José,Claudio Romero,77871426,58,Irritación / Eritema,imagen_11
+Kevin,Manuel Zelaya,78763711,24,Caida de Pelo,imagen_11
+Rosi,Noemy Arqueta,74790222,38,Melasma,imagen_11
+Edwin Norberto,Gómez Garay,70693474,42,Manchas Oscuras,imagen_11
+Francisco,Alvarez,63135620,17,Acne Juvenil,imagen_11
+Gersón,Alfredo Chavarria,70092933,25,,imagen_12
+Amilcar de,Jesús Mijango,70696959,62,Tiña Versicolor,imagen_12
+Juan Manuel,Ayala Sanchez,78954804,15,Caida de Pelo,imagen_12
+Catalina,Corona,76253370,62,Manchas Solares,imagen_12
+Roxana,Catalina,72427878,41,Dermatitis,imagen_12
+Carolina Liset,Fuentes Vilkitoro,75196635,21,Dermatitis,imagen_12
+Fernando Abel,Benitez Flores,77212157,,Dermatitis de Contacto,imagen_12
+Steven,Mate Velásquez,73315396,9,Molusco,imagen_12
+Bella,Flores,71067953,3,Tiña Corporis,imagen_12
+Wilián,Quintanilla,78863731,50,Manchas Crónicas,imagen_12
+Victor,Rivas,70481391,21,Dermatitis,imagen_12
+Ana Griselda,Ayala Campo,60705745,32,Lunares / Acne,imagen_13
+Jonatha,Vasquez,76324165,19,Acne Juvenil,imagen_13
+Francisco,Antonio Duran,75478833,32,Rinitis / Botox / Dermapen,imagen_13
+Milagro Chevez,de Villalobos,78559485,70,Verrugas,imagen_13
+Samuel,Orellana,72545186,,,imagen_13
+Jony,Alexander Suarez,76767831,41,Verrugas,imagen_13
+Eva,Nicolasa Reyes,75037147,2,Prurigo Infantil,imagen_13
+Evaluna Samaria,Sorto Andrade,79212444,4,Dermatitis,imagen_13
+Irvin,Azael Raimundo,69650749,21,Verrugas,imagen_13
+Oscar,Antonio Reyes,79293479,25,,imagen_13
+Ricardo,Martinez Pelucho,71283369,62,Alopecia,imagen_13
