@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03-03-PLAN.md (Phase 03 complete)
-last_updated: "2026-04-01T17:00:00.000Z"
+status: completed
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-04-08T21:41:56.277Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 11
-  completed_plans: 8
+  total_plans: 8
+  completed_plans: 9
   percent: 43
 ---
 
@@ -56,6 +56,7 @@ Progress: [████░░░░░░] 43%
 | Phase 02 P01 | 3min | 3 tasks | 10 files |
 | Phase 02 P03 | 5min | 2 tasks | 3 files |
 | Phase 03 P02 | 2min | 1 tasks | 1 files |
+| Phase 04 P03 | 5 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 02]: EvolutionAPIClient uses env vars as defaults with constructor override for testability
 - [Phase 02]: Alert fires once per event with no retry; silent failure if clinic number disconnected (D-08, D-09)
 - [Phase 03]: Session_state mode toggle for list/import views in Pacientes page
+- [Phase 04]: Sub-workflow pattern: main chatbot dispatches to classify-intent, faq-answer, send-wa-message sub-workflows; fromMe filter at node 2 prevents infinite bot loop
+- [Phase 04]: booking_flow branch in main chatbot sends placeholder response pending Plan 04; stores booking_step=awaiting_service_type in context JSONB
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T17:00:00.000Z
-Stopped at: Session resumed — Phase 03 complete, advancing to Phase 04
+Last session: 2026-04-08T21:41:56.272Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
