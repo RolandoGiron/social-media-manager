@@ -19,68 +19,33 @@
       "id": "switch-state",
       "name": "Connection State",
       "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
+      "typeVersion": 2,
       "position": [480, 300],
       "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.data.state }}",
         "rules": {
           "rules": [
             {
-              "outputKey": "disconnect",
-              "conditions": {
-                "options": {
-                  "combinator": "or"
-                },
-                "conditions": [
-                  {
-                    "id": "condition-close",
-                    "leftValue": "={{ $json.data.state }}",
-                    "rightValue": "close",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  },
-                  {
-                    "id": "condition-connecting",
-                    "leftValue": "={{ $json.data.state }}",
-                    "rightValue": "connecting",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ]
-              }
+              "value2": "open",
+              "output": 0
             },
             {
-              "outputKey": "connected",
-              "conditions": {
-                "options": {
-                  "combinator": "and"
-                },
-                "conditions": [
-                  {
-                    "id": "condition-open",
-                    "leftValue": "={{ $json.data.state }}",
-                    "rightValue": "open",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ]
-              }
+              "value2": "close",
+              "output": 1
+            },
+            {
+              "value2": "connecting",
+              "output": 1
             }
           ]
         },
-        "options": {
-          "fallbackOutput": "extra"
-        }
+        "fallbackOutput": 2
       }
     },
     {
-      "id": "send-disconnect-alert",
-      "name": "Send Disconnect Alert",
+      "id": "send-connection-success",
+      "name": "Send Connection Success",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [720, 150],
@@ -98,7 +63,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"text\": \"\\u26a0\\ufe0f La sesion de WhatsApp se desconecto a las {{ $now.format('yyyy-MM-dd HH:mm') }}.\\n\\nEscanea el QR para reconectar:\\nhttps://{{ $env.ADMIN_SUBDOMAIN }}.{{ $env.DOMAIN }}/WhatsApp\\n\\nEstado reportado: {{ $json.data.state }}\"\n}",
+        "jsonBody": "={\n  \"number\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"text\": \"WhatsApp conectado exitosamente a las {{ $now.format('yyyy-MM-dd HH:mm') }}.\\n\\nEl chatbot y las alertas estan activos.\"\n}",
         "options": {
           "response": {
             "response": {
@@ -111,8 +76,8 @@
       "retryOnFail": false
     },
     {
-      "id": "send-connection-success",
-      "name": "Send Connection Success",
+      "id": "send-disconnect-alert",
+      "name": "Send Disconnect Alert",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [720, 350],
@@ -130,7 +95,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"text\": \"WhatsApp conectado exitosamente a las {{ $now.format('yyyy-MM-dd HH:mm') }}.\\n\\nEl chatbot y las alertas estan activos.\"\n}",
+        "jsonBody": "={\n  \"number\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"text\": \"\\u26a0\\ufe0f La sesion de WhatsApp se desconecto a las {{ $now.format('yyyy-MM-dd HH:mm') }}.\\n\\nEscanea el QR para reconectar:\\nhttps://{{ $env.ADMIN_SUBDOMAIN }}.{{ $env.DOMAIN }}\\n\\nEstado reportado: {{ $json.data.state }}\"\n}",
         "options": {
           "response": {
             "response": {
@@ -167,14 +132,14 @@
       "main": [
         [
           {
-            "node": "Send Disconnect Alert",
+            "node": "Send Connection Success",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Send Connection Success",
+            "node": "Send Disconnect Alert",
             "type": "main",
             "index": 0
           }
