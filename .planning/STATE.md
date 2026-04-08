@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 4 context gathered (discuss mode)
-last_updated: "2026-04-08T20:45:50.067Z"
-last_activity: 2026-04-01
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-04-08T21:34:55.108Z"
+last_activity: 2026-04-08
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 12
+  completed_plans: 9
   percent: 43
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 
 ## Current Position
 
-Phase: 04 (ai-chatbot-appointment-booking) — READY TO PLAN
-Plan: 0 of TBD
-Status: Phase 03 complete — ready to discuss/plan Phase 04
-Last activity: 2026-04-01
+Phase: 04 (ai-chatbot-appointment-booking) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-04-08
 
 Progress: [████░░░░░░] 43%
 
@@ -56,6 +56,7 @@ Progress: [████░░░░░░] 43%
 | Phase 02 P01 | 3min | 3 tasks | 10 files |
 | Phase 02 P03 | 5min | 2 tasks | 3 files |
 | Phase 03 P02 | 2min | 1 tasks | 1 files |
+| Phase 04 P01 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 02]: EvolutionAPIClient uses env vars as defaults with constructor override for testability
 - [Phase 02]: Alert fires once per event with no retry; silent failure if clinic number disconnected (D-08, D-09)
 - [Phase 03]: Session_state mode toggle for list/import views in Pacientes page
+- [Phase 04]: fetch_conversations excludes closed conversations by default and sorts human_handoff first (D-15)
+- [Phase 04]: insert_message updates conversation last_message_at in same transaction for data consistency
 
 ### Pending Todos
 
@@ -92,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-08T20:45:50.062Z
-Stopped at: Phase 4 context gathered (discuss mode)
-Resume file: .planning/phases/04-ai-chatbot-appointment-booking/04-CONTEXT.md
+Last session: 2026-04-08T21:34:55.103Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None

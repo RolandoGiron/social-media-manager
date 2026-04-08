@@ -28,14 +28,14 @@
 
 ### Chatbot — IA Conversacional (BOT)
 
-- [ ] **BOT-01**: Chatbot responde automáticamente preguntas frecuentes de pacientes (horarios, ubicación, precios, servicios) usando RAG sobre el knowledge base de la clínica
+- [x] **BOT-01**: Chatbot responde automáticamente preguntas frecuentes de pacientes (horarios, ubicación, precios, servicios) usando RAG sobre el knowledge base de la clínica
 - [ ] **BOT-02**: Chatbot escala conversación a humano cuando no encuentra respuesta en el knowledge base o detecta pregunta médica/queja — envía mensaje de handoff al paciente
-- [ ] **BOT-03**: Administrador puede ver bandeja de conversaciones con historial completo (mensajes del bot y del paciente) y responder manualmente desde la UI
+- [x] **BOT-03**: Administrador puede ver bandeja de conversaciones con historial completo (mensajes del bot y del paciente) y responder manualmente desde la UI
 - [ ] **BOT-04**: Chatbot muestra indicador de "escribiendo..." (typing indicator) mientras procesa la respuesta del LLM
 
 ### Citas — Google Calendar (CAL)
 
-- [ ] **CAL-01**: Chatbot puede consultar disponibilidad en Google Calendar de la clínica y agendar cita sin intervención humana, usando Service Account (sin expiración de token)
+- [x] **CAL-01**: Chatbot puede consultar disponibilidad en Google Calendar de la clínica y agendar cita sin intervención humana, usando Service Account (sin expiración de token)
 - [ ] **CAL-02**: Sistema envía mensaje de confirmación de cita por WhatsApp al paciente con fecha, hora y datos de la clínica
 - [ ] **CAL-03**: Sistema envía recordatorio automático por WhatsApp 24 horas y 1 hora antes de la cita agendada
 
