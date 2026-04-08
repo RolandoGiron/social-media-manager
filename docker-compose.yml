@@ -139,6 +139,8 @@ services:
       - n8n
       - evolution-api
       - streamlit
+    env_file:
+      - .env
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
