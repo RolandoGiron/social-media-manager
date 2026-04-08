@@ -1,0 +1,115 @@
+{
+  "name": "sub-classify-intent",
+  "nodes": [
+    {
+      "id": "execute-workflow-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {}
+    },
+    {
+      "id": "openai-classify-intent",
+      "name": "Classify Intent (OpenAI)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [480, 300],
+      "parameters": {
+        "resource": "chat",
+        "operation": "message",
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a dermatology clinic assistant. Classify the patient's message into one of these intents:\n- FAQ: patient asks about hours, location, prices, services, or general information\n- BOOKING: patient wants to schedule/book/make an appointment\n- HANDOFF: patient has a medical complaint, is frustrated, or asks something you cannot answer\n- GREETING: patient says hello or a generic greeting\n\nRespond with ONLY the intent label (FAQ, BOOKING, HANDOFF, or GREETING). No explanation.\n\nKnowledge base context:\n={{ $json.formatted_faqs }}"
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.message_text }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credential",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "id": "set-intent-output",
+      "name": "Set Intent Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 300],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "intent",
+              "name": "intent",
+              "value": "={{ $json.message.content.trim().toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "message_text",
+              "name": "message_text",
+              "value": "={{ $('Execute Workflow Trigger').item.json.message_text }}",
+              "type": "string"
+            },
+            {
+              "id": "formatted_faqs",
+              "name": "formatted_faqs",
+              "value": "={{ $('Execute Workflow Trigger').item.json.formatted_faqs }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Classify Intent (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Intent (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Set Intent Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "chatbot" },
+    { "name": "sub-workflow" }
+  ]
+}
