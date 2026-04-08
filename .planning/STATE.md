@@ -88,9 +88,10 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260408-09t | Guardar campo enfermedad del CSV en notes y mostrar en listado de pacientes | 2026-04-08 | 322efb0 | [260408-09t-guardar-campo-enfermedad-del-csv-en-note](./quick/260408-09t-guardar-campo-enfermedad-del-csv-en-note/) |
+| 260408-14q | CRUD de pacientes: crear, editar y borrar desde la UI | 2026-04-08 | abe335f | [260408-14q-agregar-crud-de-pacientes-crear-editar-y](./quick/260408-14q-agregar-crud-de-pacientes-crear-editar-y/) |
 
 ## Session Continuity
 
 Last session: 2026-04-08
-Stopped at: Completed quick task 260408-09t: Guardar campo enfermedad del CSV en notes y mostrar en listado de pacientes
+Stopped at: Completed quick task 260408-14q: CRUD de pacientes (crear, editar, borrar)
 Resume file: None
