@@ -89,15 +89,19 @@ if st.session_state.pacientes_mode == "import":
                 use_container_width=True,
             ):
                 new_rows = preview_df[preview_df["estado"] == "Nuevo"]
-                patients = [
-                    {
-                        "first_name": row["nombre"],
-                        "last_name": row["apellido"],
-                        "phone": str(row["telefono"]),
-                        "phone_normalized": row["tel_normalizado"],
-                    }
-                    for _, row in new_rows.iterrows()
-                ]
+                patients = []
+                for _, row in new_rows.iterrows():
+                    enfermedad_raw = row.get("enfermedad", "")
+                    notes_val = "" if pd.isna(enfermedad_raw) else str(enfermedad_raw).strip()
+                    patients.append(
+                        {
+                            "first_name": row["nombre"],
+                            "last_name": row["apellido"],
+                            "phone": str(row["telefono"]),
+                            "phone_normalized": row["tel_normalizado"],
+                            "notes": notes_val,
+                        }
+                    )
                 with st.spinner("Importando pacientes..."):
                     try:
                         count = insert_patients(patients)

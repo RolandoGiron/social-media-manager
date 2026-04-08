@@ -52,7 +52,7 @@ def fetch_patients(
             cur.execute(
                 f"""
                 SELECT p.id, p.first_name, p.last_name, p.phone_normalized,
-                       p.source, p.created_at
+                       p.source, p.notes, p.created_at
                 FROM patients p {where}
                 ORDER BY p.created_at DESC
                 LIMIT %s OFFSET %s
@@ -86,12 +86,12 @@ def insert_patients(patients: list[dict]) -> int:
     try:
         with conn.cursor() as cur:
             sql = """
-                INSERT INTO patients (first_name, last_name, phone, phone_normalized, source)
+                INSERT INTO patients (first_name, last_name, phone, phone_normalized, source, notes)
                 VALUES %s
                 ON CONFLICT (phone_normalized) DO NOTHING
             """
             values = [
-                (p["first_name"], p["last_name"], p["phone"], p["phone_normalized"], "csv_import")
+                (p["first_name"], p["last_name"], p["phone"], p["phone_normalized"], "csv_import", p.get("notes", ""))
                 for p in patients
             ]
             execute_values(cur, sql, values)
