@@ -194,7 +194,7 @@ def fetch_tags_for_patients(patient_ids: list[str]) -> dict[str, list[dict]]:
                 SELECT pt.patient_id, t.name, t.color
                 FROM patient_tags pt
                 JOIN tags t ON pt.tag_id = t.id
-                WHERE pt.patient_id = ANY(%s)
+                WHERE pt.patient_id = ANY(%s::uuid[])
                 """,
                 (patient_ids,),
             )
