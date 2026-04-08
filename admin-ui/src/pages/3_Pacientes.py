@@ -280,6 +280,7 @@ elif st.session_state.pacientes_mode == "list":
                     "id": pid,
                     "Nombre": f'{p["first_name"]} {p["last_name"]}',
                     "Telefono": p["phone_normalized"],
+                    "Notas": p.get("notes", "") or "",
                     "Etiquetas": tag_names,
                     "Fuente": p.get("source", ""),
                     "Registrado": date_str,
@@ -287,7 +288,7 @@ elif st.session_state.pacientes_mode == "list":
             )
 
         display_df = pd.DataFrame(rows)
-        visible_columns = ["Nombre", "Telefono", "Etiquetas", "Fuente", "Registrado"]
+        visible_columns = ["Nombre", "Telefono", "Notas", "Etiquetas", "Fuente", "Registrado"]
 
         event = st.dataframe(
             display_df[visible_columns],
