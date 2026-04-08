@@ -83,8 +83,14 @@ None yet.
 - [Phase 4 dependency]: Google Calendar Service Account setup should be tested before Phase 4 to avoid blocking appointment booking implementation.
 - [Phase 2]: Evolution API v2 webhook payload schema should be verified against current GitHub docs before building chatbot workflow (field names may have changed).
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260408-14q | CRUD de pacientes: crear, editar y borrar desde la UI | 2026-04-08 | abe335f | [260408-14q-agregar-crud-de-pacientes-crear-editar-y](./quick/260408-14q-agregar-crud-de-pacientes-crear-editar-y/) |
+
 ## Session Continuity
 
-Last session: 2026-04-01T17:00:00.000Z
-Stopped at: Session resumed — Phase 03 complete, advancing to Phase 04
+Last session: 2026-04-08
+Stopped at: Completed quick task 260408-14q: CRUD de pacientes
 Resume file: None
