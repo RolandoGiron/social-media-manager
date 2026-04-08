@@ -425,3 +425,116 @@ def delete_knowledge_base_item(item_id: str) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+# === Inbox Query Functions ===
+
+def fetch_conversations(state_filter: str = None) -> list[dict]:
+    """Fetch open conversations with optional state filter.
+
+    Returns list of dicts with patient info joined. human_handoff conversations
+    sort first (per D-15). Closed conversations excluded unless state_filter is set.
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            sql = """
+                SELECT c.id, c.wa_contact_id, c.state, c.context, c.last_message_at, c.created_at,
+                       p.first_name, p.last_name, p.phone_normalized,
+                       (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message
+                FROM conversations c
+                LEFT JOIN patients p ON c.patient_id = p.id
+            """
+            if state_filter:
+                sql += " WHERE c.state = %s"
+                params = [state_filter]
+            else:
+                sql += " WHERE c.state != 'closed'"
+                params = []
+            sql += " ORDER BY CASE WHEN c.state = 'human_handoff' THEN 0 ELSE 1 END, c.last_message_at DESC"
+            cur.execute(sql, params)
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+
+def fetch_messages_for_conversation(conversation_id: str) -> list[dict]:
+    """Fetch all messages for a conversation ordered by created_at ASC."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            sql = """
+                SELECT id, direction, sender, content, media_url, media_type, wa_message_id, created_at
+                FROM messages WHERE conversation_id = %s ORDER BY created_at ASC
+            """
+            cur.execute(sql, (conversation_id,))
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+
+def insert_message(
+    conversation_id: str,
+    direction: str,
+    sender: str,
+    content: str,
+) -> dict:
+    """Insert a message and update conversation last_message_at. Returns new row."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            sql = """
+                INSERT INTO messages (conversation_id, direction, sender, content)
+                VALUES (%s, %s, %s, %s) RETURNING *
+            """
+            cur.execute(sql, (conversation_id, direction, sender, content))
+            result = cur.fetchone()
+            cur.execute(
+                "UPDATE conversations SET last_message_at = now() WHERE id = %s",
+                (conversation_id,),
+            )
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
+
+def update_conversation_state(conversation_id: str, new_state: str) -> dict:
+    """Update the state of a conversation. Returns the updated row."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            sql = """
+                UPDATE conversations SET state = %s WHERE id = %s
+                RETURNING id, state, wa_contact_id, context
+            """
+            cur.execute(sql, (new_state, conversation_id))
+            result = cur.fetchone()
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
+
+def insert_appointment(
+    patient_id: str,
+    appointment_type: str,
+    scheduled_at: str,
+    google_event_id: str = None,
+    duration_minutes: int = 30,
+    notes: str = None,
+) -> dict:
+    """Insert a new appointment. Returns the created appointment row."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            sql = """
+                INSERT INTO appointments (patient_id, appointment_type, scheduled_at, google_event_id, duration_minutes, notes)
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING *
+            """
+            cur.execute(sql, (patient_id, appointment_type, scheduled_at, google_event_id, duration_minutes, notes))
+            result = cur.fetchone()
+        conn.commit()
+        return result
+    finally:
+        conn.close()
