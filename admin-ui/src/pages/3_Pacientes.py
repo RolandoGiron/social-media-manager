@@ -14,8 +14,12 @@ from components.database import (
     create_tag,
     delete_tag,
     assign_tags_to_patients,
+    fetch_patient_by_id,
+    insert_patient,
+    update_patient,
+    delete_patients,
 )
-from components.patients import parse_import_file, build_preview
+from components.patients import parse_import_file, build_preview, normalize_sv_phone
 
 render_sidebar()
 
@@ -302,7 +306,7 @@ elif st.session_state.pacientes_mode == "list":
 
             st.caption(f"{len(selected_ids)} pacientes seleccionados")
 
-            bulk_col_tags, bulk_col_btn = st.columns([3, 1])
+            bulk_col_tags, bulk_col_btn, bulk_col_delete = st.columns([3, 1, 1])
             with bulk_col_tags:
                 tag_assign = st.multiselect(
                     "Etiquetas a asignar",
@@ -327,6 +331,173 @@ elif st.session_state.pacientes_mode == "list":
                         st.rerun()
                     except Exception as e:
                         st.error(f"Error al asignar etiquetas: {e}")
+            with bulk_col_delete:
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button(
+                    "Borrar seleccionados",
+                    icon=":material/delete:",
+                    type="secondary",
+                    use_container_width=True,
+                ):
+                    st.session_state["confirm_bulk_delete"] = True
+                    st.session_state["bulk_delete_ids"] = selected_ids
+
+            # Bulk delete confirmation
+            if st.session_state.get("confirm_bulk_delete"):
+                bulk_ids = st.session_state.get("bulk_delete_ids", [])
+                st.warning(
+                    f"Estas a punto de borrar {len(bulk_ids)} pacientes. "
+                    "Esta accion no se puede deshacer."
+                )
+                confirm_col, cancel_col = st.columns(2)
+                with confirm_col:
+                    if st.button("Confirmar borrado", type="primary", use_container_width=True):
+                        try:
+                            count = delete_patients(bulk_ids)
+                            st.success(f"Se borraron {count} pacientes.")
+                            st.session_state.pop("confirm_bulk_delete", None)
+                            st.session_state.pop("bulk_delete_ids", None)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error al borrar pacientes: {e}")
+                with cancel_col:
+                    if st.button("Cancelar", use_container_width=True):
+                        st.session_state.pop("confirm_bulk_delete", None)
+                        st.session_state.pop("bulk_delete_ids", None)
+                        st.rerun()
+
+            # --- Edit form for single selected patient ---
+            if len(event.selection.rows) == 1:
+                selected_row_idx = event.selection.rows[0]
+                selected_patient_id = display_df.iloc[selected_row_idx]["id"]
+                try:
+                    patient_data = fetch_patient_by_id(selected_patient_id)
+                except Exception:
+                    patient_data = None
+
+                if patient_data:
+                    with st.expander(
+                        f"Editar: {patient_data['first_name']} {patient_data['last_name']}",
+                        expanded=True,
+                    ):
+                        with st.form("edit_patient_form"):
+                            edit_col1, edit_col2 = st.columns(2)
+                            with edit_col1:
+                                edit_nombre = st.text_input(
+                                    "Nombre *", value=patient_data.get("first_name", "")
+                                )
+                                edit_telefono = st.text_input(
+                                    "Telefono *", value=patient_data.get("phone", "")
+                                )
+                                edit_notas = st.text_area(
+                                    "Notas", value=patient_data.get("notes", "") or ""
+                                )
+                            with edit_col2:
+                                edit_apellido = st.text_input(
+                                    "Apellido *", value=patient_data.get("last_name", "")
+                                )
+                                edit_email = st.text_input(
+                                    "Email", value=patient_data.get("email", "") or ""
+                                )
+
+                            edit_submit = st.form_submit_button(
+                                "Guardar cambios", use_container_width=True
+                            )
+
+                        if edit_submit:
+                            if not edit_nombre.strip() or not edit_apellido.strip() or not edit_telefono.strip():
+                                st.error("Nombre, apellido y telefono son obligatorios.")
+                            else:
+                                phone_norm, phone_err = normalize_sv_phone(edit_telefono.strip())
+                                if phone_err:
+                                    st.error(f"Telefono invalido: {phone_err}")
+                                else:
+                                    try:
+                                        update_patient(
+                                            patient_id=selected_patient_id,
+                                            first_name=edit_nombre.strip(),
+                                            last_name=edit_apellido.strip(),
+                                            phone=edit_telefono.strip(),
+                                            phone_normalized=phone_norm,
+                                            email=edit_email.strip(),
+                                            notes=edit_notas.strip(),
+                                        )
+                                        st.success("Paciente actualizado exitosamente.")
+                                        st.rerun()
+                                    except Exception as e:
+                                        if "uq_patients_phone_normalized" in str(e):
+                                            st.error("Ya existe un paciente con ese numero de telefono.")
+                                        else:
+                                            st.error(f"Error al actualizar: {e}")
+
+                        # Individual delete button
+                        if st.button(
+                            "Borrar paciente",
+                            icon=":material/delete:",
+                            type="secondary",
+                            key="individual_delete",
+                        ):
+                            st.session_state["confirm_individual_delete"] = selected_patient_id
+
+                        if st.session_state.get("confirm_individual_delete") == selected_patient_id:
+                            st.warning("Esta accion no se puede deshacer.")
+                            del_col1, del_col2 = st.columns(2)
+                            with del_col1:
+                                if st.button("Confirmar borrado", type="primary", key="confirm_ind_del", use_container_width=True):
+                                    try:
+                                        delete_patients([selected_patient_id])
+                                        st.success("Paciente eliminado.")
+                                        st.session_state.pop("confirm_individual_delete", None)
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Error al borrar: {e}")
+                            with del_col2:
+                                if st.button("Cancelar", key="cancel_ind_del", use_container_width=True):
+                                    st.session_state.pop("confirm_individual_delete", None)
+                                    st.rerun()
+
+        # --- Create new patient form ---
+        with st.expander("Nuevo paciente"):
+            with st.form("create_patient_form"):
+                create_col1, create_col2 = st.columns(2)
+                with create_col1:
+                    new_nombre = st.text_input("Nombre *", key="new_nombre")
+                    new_telefono = st.text_input("Telefono *", key="new_telefono")
+                    new_notas = st.text_area("Notas", key="new_notas")
+                with create_col2:
+                    new_apellido = st.text_input("Apellido *", key="new_apellido")
+                    new_email = st.text_input("Email", key="new_email")
+                    new_fuente = st.text_input("Fuente", value="manual", key="new_fuente")
+
+                create_submit = st.form_submit_button(
+                    "Crear paciente", use_container_width=True
+                )
+
+            if create_submit:
+                if not new_nombre.strip() or not new_apellido.strip() or not new_telefono.strip():
+                    st.error("Nombre, apellido y telefono son obligatorios.")
+                else:
+                    phone_norm, phone_err = normalize_sv_phone(new_telefono.strip())
+                    if phone_err:
+                        st.error(f"Telefono invalido: {phone_err}")
+                    else:
+                        try:
+                            insert_patient(
+                                first_name=new_nombre.strip(),
+                                last_name=new_apellido.strip(),
+                                phone=new_telefono.strip(),
+                                phone_normalized=phone_norm,
+                                email=new_email.strip(),
+                                notes=new_notas.strip(),
+                                source=new_fuente.strip() or "manual",
+                            )
+                            st.success("Paciente creado exitosamente.")
+                            st.rerun()
+                        except Exception as e:
+                            if "uq_patients_phone_normalized" in str(e):
+                                st.error("Ya existe un paciente con ese numero de telefono.")
+                            else:
+                                st.error(f"Error al crear paciente: {e}")
 
         # --- Pagination (D-05) ---
         total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
