@@ -1,0 +1,833 @@
+{
+  "name": "whatsapp-chatbot",
+  "nodes": [
+    {
+      "id": "webhook-messages-upsert",
+      "name": "Receive MESSAGES_UPSERT",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "whatsapp-messages-upsert",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-inbound/messages-upsert",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "filter-from-me",
+      "name": "Filter fromMe Messages",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [480, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "filter-from-me-check",
+              "leftValue": "={{ $json.body.data.key.fromMe }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "extract-fields",
+      "name": "Extract Message Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 200],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "remote_jid",
+              "name": "remote_jid",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "message_text",
+              "name": "message_text",
+              "value": "={{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "push_name",
+              "name": "push_name",
+              "value": "={{ $json.body.data.pushName }}",
+              "type": "string"
+            },
+            {
+              "id": "wa_message_id",
+              "name": "wa_message_id",
+              "value": "={{ $json.body.data.key.id }}",
+              "type": "string"
+            },
+            {
+              "id": "instance_name",
+              "name": "instance_name",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "api_key",
+              "name": "api_key",
+              "value": "=Jehova01",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "read-conversation-state",
+      "name": "Read Conversation State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [960, 200],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.id, c.state, c.context, c.patient_id, c.wa_contact_id,\n       p.first_name, p.last_name, p.phone_normalized\nFROM conversations c\nLEFT JOIN patients p ON c.patient_id = p.id\nWHERE c.wa_contact_id = '{{ $json.remote_jid }}' AND c.state != 'closed'\nORDER BY c.last_message_at DESC NULLS LAST\nLIMIT 1",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "conversation-exists",
+      "name": "Conversation Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1200, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-id",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "create-conversation",
+      "name": "Create New Conversation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1440, 350],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH patient_match AS (\n  SELECT id FROM patients\n  WHERE phone_normalized = regexp_replace('{{ $('Extract Message Fields').item.json.remote_jid }}', '[^0-9]', '', 'g')\n  LIMIT 1\n)\nINSERT INTO conversations (wa_contact_id, state, context, patient_id)\nSELECT\n  '{{ $('Extract Message Fields').item.json.remote_jid }}',\n  'awaiting_intent',\n  '{}'::jsonb,\n  (SELECT id FROM patient_match)\nRETURNING id, state, context, patient_id, wa_contact_id, NULL::text as first_name, NULL::text as last_name, NULL::text as phone_normalized",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "merge-conversation",
+      "name": "Merge Conversation Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1680, 200],
+      "parameters": {
+        "mode": "chooseBranch",
+        "chooseBranch": {
+          "mode": "waitForAll"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "insert-inbound-message",
+      "name": "Insert Inbound Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1920, 200],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (conversation_id, direction, sender, content, wa_message_id)\nVALUES (\n  '{{ $json.id }}'::uuid,\n  'inbound',\n  'patient',\n  '{{ $('Extract Message Fields').item.json.message_text.replace(/'/g, \"''\") }}',\n  '{{ $('Extract Message Fields').item.json.wa_message_id }}'\n) RETURNING id",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "check-human-handoff",
+      "name": "Is Human Handoff?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2160, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-state",
+              "leftValue": "={{ $('Merge Conversation Data').item.json.state }}",
+              "rightValue": "human_handoff",
+              "operator": {
+                "type": "string",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "load-knowledge-base",
+      "name": "Load Knowledge Base",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2400, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT pregunta, respuesta, categoria FROM knowledge_base WHERE is_active = true ORDER BY categoria",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "format-faqs",
+      "name": "Format FAQs for LLM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2640, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\nconst extractFields = $('Extract Message Fields').first().json;\nconst mergedConv = $('Merge Conversation Data').first().json;\n\n// Format all FAQ rows into a single string for LLM injection\nconst formattedFaqs = items.map(item => {\n  return `Q: ${item.json.pregunta}\\nA: ${item.json.respuesta}`;\n}).join('\\n---\\n');\n\nreturn [{\n  json: {\n    formatted_faqs: formattedFaqs || 'No hay informacion disponible en este momento.',\n    message_text: extractFields.message_text,\n    remote_jid: extractFields.remote_jid,\n    push_name: extractFields.push_name,\n    wa_message_id: extractFields.wa_message_id,\n    instance_name: extractFields.instance_name,\n    api_key: extractFields.api_key,\n    conversation_id: mergedConv.id,\n    conversation_state: mergedConv.state,\n    conversation_context: mergedConv.context || {}\n  }\n}];"
+      }
+    },
+    {
+      "id": "classify-intent",
+      "name": "Classify Intent",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [2880, 300],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "sub-classify-intent",
+          "mode": "name"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "schema": [],
+          "mappingMode": "passThrough"
+        }
+      }
+    },
+    {
+      "id": "route-by-intent",
+      "name": "Route by Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [3120, 300],
+      "parameters": {
+        "mode": "rules",
+        "dataType": "string",
+        "value1": "={{ $json.intent }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "FAQ",
+              "output": 0
+            },
+            {
+              "value2": "BOOKING",
+              "output": 1
+            },
+            {
+              "value2": "HANDOFF",
+              "output": 2
+            },
+            {
+              "value2": "GREETING",
+              "output": 3
+            }
+          ]
+        },
+        "fallbackOutput": 2
+      }
+    },
+    {
+      "id": "faq-answer",
+      "name": "FAQ Answer",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [3360, 100],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "sub-faq-answer",
+          "mode": "name"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "schema": [],
+          "mappingMode": "passThrough"
+        }
+      }
+    },
+    {
+      "id": "booking-response",
+      "name": "Set Booking Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3360, 250],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response_text",
+              "name": "response_text",
+              "value": "Claro, con gusto te ayudo a agendar una cita. Que tipo de servicio necesitas?",
+              "type": "string"
+            },
+            {
+              "id": "new_state",
+              "name": "new_state",
+              "value": "booking_flow",
+              "type": "string"
+            },
+            {
+              "id": "is_handoff",
+              "name": "is_handoff",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "new_context",
+              "name": "new_context",
+              "value": "={{ JSON.stringify({ booking_step: 'awaiting_service_type' }) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "handoff-response",
+      "name": "Set Handoff Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3360, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response_text",
+              "name": "response_text",
+              "value": "Tu consulta fue recibida. Un miembro de nuestro equipo te atendra en breve.",
+              "type": "string"
+            },
+            {
+              "id": "new_state",
+              "name": "new_state",
+              "value": "human_handoff",
+              "type": "string"
+            },
+            {
+              "id": "is_handoff",
+              "name": "is_handoff",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "new_context",
+              "name": "new_context",
+              "value": "={}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "greeting-response",
+      "name": "Set Greeting Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3360, 550],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response_text",
+              "name": "response_text",
+              "value": "Hola! Soy la asistente virtual de la clinica. En que puedo ayudarte? Puedo responder preguntas sobre nuestros servicios, horarios, ubicacion, o ayudarte a agendar una cita.",
+              "type": "string"
+            },
+            {
+              "id": "new_state",
+              "name": "new_state",
+              "value": "awaiting_intent",
+              "type": "string"
+            },
+            {
+              "id": "is_handoff",
+              "name": "is_handoff",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "new_context",
+              "name": "new_context",
+              "value": "={}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "merge-intent-responses",
+      "name": "Merge Intent Responses",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [3600, 300],
+      "parameters": {
+        "mode": "chooseBranch",
+        "chooseBranch": {
+          "mode": "waitForAll",
+          "output": 0
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "check-faq-handoff",
+      "name": "Check FAQ Triggers Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3840, 300],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst formatFaqs = $('Format FAQs for LLM').first().json;\n\n// Determine final state and response\nlet newState = item.new_state || 'awaiting_intent';\nlet responseText = item.response_text || '';\nlet newContext = item.new_context || '{}';\n\n// If FAQ response contains handoff phrase, escalate to human_handoff\nif (item.is_handoff === true || (responseText && responseText.includes('No tengo esa informacion'))) {\n  newState = 'human_handoff';\n}\n\n// For FAQ intent (no explicit new_state from faq-answer sub-workflow), set state back to awaiting_intent\nif (!item.new_state && !item.is_handoff) {\n  newState = 'awaiting_intent';\n}\n\nreturn {\n  json: {\n    response_text: responseText,\n    new_state: newState,\n    new_context: newContext,\n    conversation_id: formatFaqs.conversation_id,\n    remote_jid: formatFaqs.remote_jid,\n    instance_name: formatFaqs.instance_name,\n    api_key: formatFaqs.api_key\n  }\n};"
+      }
+    },
+    {
+      "id": "update-conversation-state",
+      "name": "Update Conversation State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [4080, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE conversations\nSET state = '{{ $json.new_state }}',\n    context = '{{ $json.new_context }}'::jsonb,\n    last_message_at = now()\nWHERE id = '{{ $json.conversation_id }}'::uuid\nRETURNING id, state",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "insert-bot-message",
+      "name": "Insert Bot Response Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [4320, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (conversation_id, direction, sender, content)\nVALUES (\n  '{{ $('Check FAQ Triggers Handoff').item.json.conversation_id }}'::uuid,\n  'outbound',\n  'bot',\n  '{{ $('Check FAQ Triggers Handoff').item.json.response_text.replace(/'/g, \"''\") }}'\n) RETURNING id",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "send-wa-message",
+      "name": "Send WA Message",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [4560, 300],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "sub-send-wa-message",
+          "mode": "name"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "schema": [
+            {
+              "name": "remote_jid",
+              "type": "string"
+            },
+            {
+              "name": "response_text",
+              "type": "string"
+            },
+            {
+              "name": "instance_name",
+              "type": "string"
+            },
+            {
+              "name": "api_key",
+              "type": "string"
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "value": {
+            "remote_jid": "={{ $('Check FAQ Triggers Handoff').item.json.remote_jid }}",
+            "response_text": "={{ $('Check FAQ Triggers Handoff').item.json.response_text }}",
+            "instance_name": "={{ $('Check FAQ Triggers Handoff').item.json.instance_name }}",
+            "api_key": "={{ $('Check FAQ Triggers Handoff').item.json.api_key }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "end-human-handoff",
+      "name": "End - Human Handoff Active",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2400, 100],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Receive MESSAGES_UPSERT": {
+      "main": [
+        [
+          {
+            "node": "Filter fromMe Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter fromMe Messages": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Extract Message Fields": {
+      "main": [
+        [
+          {
+            "node": "Read Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Conversation State": {
+      "main": [
+        [
+          {
+            "node": "Conversation Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Exists?": {
+      "main": [
+        [
+          {
+            "node": "Merge Conversation Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create New Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create New Conversation": {
+      "main": [
+        [
+          {
+            "node": "Merge Conversation Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Conversation Data": {
+      "main": [
+        [
+          {
+            "node": "Insert Inbound Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Inbound Message": {
+      "main": [
+        [
+          {
+            "node": "Is Human Handoff?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Human Handoff?": {
+      "main": [
+        [
+          {
+            "node": "End - Human Handoff Active",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Format FAQs for LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format FAQs for LLM": {
+      "main": [
+        [
+          {
+            "node": "Classify Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Intent": {
+      "main": [
+        [
+          {
+            "node": "Route by Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Intent": {
+      "main": [
+        [
+          {
+            "node": "FAQ Answer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Booking Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Handoff Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Greeting Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ Answer": {
+      "main": [
+        [
+          {
+            "node": "Merge Intent Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Booking Response": {
+      "main": [
+        [
+          {
+            "node": "Merge Intent Responses",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Set Handoff Response": {
+      "main": [
+        [
+          {
+            "node": "Merge Intent Responses",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Set Greeting Response": {
+      "main": [
+        [
+          {
+            "node": "Merge Intent Responses",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge Intent Responses": {
+      "main": [
+        [
+          {
+            "node": "Check FAQ Triggers Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check FAQ Triggers Handoff": {
+      "main": [
+        [
+          {
+            "node": "Update Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Conversation State": {
+      "main": [
+        [
+          {
+            "node": "Insert Bot Response Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Bot Response Message": {
+      "main": [
+        [
+          {
+            "node": "Send WA Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "whatsapp" },
+    { "name": "chatbot" }
+  ]
+}
