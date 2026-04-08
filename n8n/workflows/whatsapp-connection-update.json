@@ -57,7 +57,7 @@
           "parameters": [
             {
               "name": "apikey",
-              "value": "={{ $env.EVOLUTION_API_KEY }}"
+              "value": "Jehova01"
             },
             {
               "name": "Content-Type",
@@ -67,7 +67,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ number: $env.ADMIN_WHATSAPP_NUMBER, text: 'WhatsApp conectado exitosamente. El chatbot y las alertas estan activos.' }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: "+50378422032", text: 'WhatsApp conectado exitosamente. El chatbot y las alertas estan activos.' }) }}",
         "options": {}
       },
       "onError": "continueRegularOutput"
@@ -86,7 +86,7 @@
           "parameters": [
             {
               "name": "apikey",
-              "value": "={{ $env.EVOLUTION_API_KEY }}"
+              "value": "Jehova01"
             },
             {
               "name": "Content-Type",
@@ -96,7 +96,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ number: $env.ADMIN_WHATSAPP_NUMBER, text: '\u26a0\ufe0f La sesion de WhatsApp se desconecto. Estado: ' + $json.body.data.state }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: "+50378422032", text: '\u26a0\ufe0f La sesion de WhatsApp se desconecto. Estado: ' + $json.body.data.state }) }}",
         "options": {}
       },
       "onError": "continueRegularOutput"
