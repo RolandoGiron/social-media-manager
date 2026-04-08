@@ -51,29 +51,26 @@
       "position": [720, 150],
       "parameters": {
         "method": "POST",
-        "url": "=http://evolution-api:8080/message/sendText/{{ $env.EVOLUTION_INSTANCE_NAME || 'clinic-main' }}",
+        "url": "=http://evolution-api:8080/message/sendText/clinic-main",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "apikey",
               "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"text\": \"WhatsApp conectado exitosamente a las {{ $now.format('yyyy-MM-dd HH:mm') }}.\\n\\nEl chatbot y las alertas estan activos.\"\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
+        "jsonBody": "={{ JSON.stringify({ number: $env.ADMIN_WHATSAPP_NUMBER, text: 'WhatsApp conectado exitosamente. El chatbot y las alertas estan activos.' }) }}",
+        "options": {}
       },
-      "onError": "continueRegularOutput",
-      "retryOnFail": false
+      "onError": "continueRegularOutput"
     },
     {
       "id": "send-disconnect-alert",
@@ -83,29 +80,26 @@
       "position": [720, 350],
       "parameters": {
         "method": "POST",
-        "url": "=http://evolution-api:8080/message/sendText/{{ $env.EVOLUTION_INSTANCE_NAME || 'clinic-main' }}",
+        "url": "=http://evolution-api:8080/message/sendText/clinic-main",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "apikey",
               "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"text\": \"\\u26a0\\ufe0f La sesion de WhatsApp se desconecto a las {{ $now.format('yyyy-MM-dd HH:mm') }}.\\n\\nEscanea el QR para reconectar:\\nhttps://{{ $env.ADMIN_SUBDOMAIN }}.{{ $env.DOMAIN }}\\n\\nEstado reportado: {{ $json.data.state }}\"\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
+        "jsonBody": "={{ JSON.stringify({ number: $env.ADMIN_WHATSAPP_NUMBER, text: '\u26a0\ufe0f La sesion de WhatsApp se desconecto. Estado: ' + $json.data.state }) }}",
+        "options": {}
       },
-      "onError": "continueRegularOutput",
-      "retryOnFail": false
+      "onError": "continueRegularOutput"
     },
     {
       "id": "log-other-state",
@@ -159,11 +153,7 @@
     "executionOrder": "v1"
   },
   "tags": [
-    {
-      "name": "whatsapp"
-    },
-    {
-      "name": "infra"
-    }
+    { "name": "whatsapp" },
+    { "name": "infra" }
   ]
 }
