@@ -80,7 +80,13 @@ Plans:
   2. Patient asks a question the bot cannot answer or sends a medical complaint, and the chatbot sends a handoff message and flags the conversation for human response
   3. Patient requests an appointment, the chatbot checks Google Calendar availability, and books the appointment without human intervention — patient receives a WhatsApp confirmation with date, time, and clinic details
   4. Admin can view the full conversation history (bot and patient messages) and send a manual reply from the inbox UI
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Database migration (knowledge_base table), KB CRUD functions, inbox query functions, appointment insert, test scaffolds
+- [ ] 04-02-PLAN.md — Streamlit Inbox page and Knowledge Base page with navigation wiring
+- [ ] 04-03-PLAN.md — n8n chatbot workflows: main webhook + classify-intent, faq-answer, send-wa-message sub-workflows
+- [ ] 04-04-PLAN.md — Booking sub-workflow with Google Calendar integration and end-to-end verification
 **UI hint**: yes
 
 ### Phase 5: Campaign Blast
@@ -127,7 +133,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. Infrastructure Foundation | 0/2 | Planning complete | - |
 | 2. WhatsApp Core | 2/3 | In Progress|  |
 | 3. CRM Core | 0/3 | Planning complete | - |
-| 4. AI Chatbot + Appointment Booking | 0/? | Not started | - |
+| 4. AI Chatbot + Appointment Booking | 0/4 | Planning complete | - |
 | 5. Campaign Blast | 0/? | Not started | - |
 | 6. Social Media Publishing | 0/? | Not started | - |
 | 7. Automation Layer + Dashboard | 0/? | Not started | - |
