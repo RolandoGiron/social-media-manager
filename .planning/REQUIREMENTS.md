@@ -29,9 +29,9 @@
 ### Chatbot — IA Conversacional (BOT)
 
 - [x] **BOT-01**: Chatbot responde automáticamente preguntas frecuentes de pacientes (horarios, ubicación, precios, servicios) usando RAG sobre el knowledge base de la clínica
-- [ ] **BOT-02**: Chatbot escala conversación a humano cuando no encuentra respuesta en el knowledge base o detecta pregunta médica/queja — envía mensaje de handoff al paciente
+- [x] **BOT-02**: Chatbot escala conversación a humano cuando no encuentra respuesta en el knowledge base o detecta pregunta médica/queja — envía mensaje de handoff al paciente
 - [x] **BOT-03**: Administrador puede ver bandeja de conversaciones con historial completo (mensajes del bot y del paciente) y responder manualmente desde la UI
-- [ ] **BOT-04**: Chatbot muestra indicador de "escribiendo..." (typing indicator) mientras procesa la respuesta del LLM
+- [x] **BOT-04**: Chatbot muestra indicador de "escribiendo..." (typing indicator) mientras procesa la respuesta del LLM
 
 ### Citas — Google Calendar (CAL)
 
