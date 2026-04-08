@@ -38,7 +38,7 @@ def fetch_patients(
 
             if tag_ids:
                 conditions.append(
-                    "id IN (SELECT patient_id FROM patient_tags WHERE tag_id = ANY(%s))"
+                    "id IN (SELECT patient_id FROM patient_tags WHERE tag_id = ANY(%s::uuid[]))"
                 )
                 params.append(tag_ids)
 
