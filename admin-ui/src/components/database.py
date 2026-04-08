@@ -52,7 +52,7 @@ def fetch_patients(
             cur.execute(
                 f"""
                 SELECT p.id, p.first_name, p.last_name, p.phone_normalized,
-                       p.source, p.created_at
+                       p.email, p.notes, p.source, p.created_at
                 FROM patients p {where}
                 ORDER BY p.created_at DESC
                 LIMIT %s OFFSET %s
@@ -98,6 +98,105 @@ def insert_patients(patients: list[dict]) -> int:
             inserted = cur.rowcount
         conn.commit()
         return inserted
+    finally:
+        conn.close()
+
+
+def fetch_patient_by_id(patient_id: str) -> dict | None:
+    """Fetch a single patient by ID. Returns dict or None."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, first_name, last_name, phone, phone_normalized,
+                       email, notes, source
+                FROM patients WHERE id = %s
+                """,
+                (patient_id,),
+            )
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+
+def insert_patient(
+    first_name: str,
+    last_name: str,
+    phone: str,
+    phone_normalized: str,
+    email: str = "",
+    notes: str = "",
+    source: str = "manual",
+) -> dict:
+    """Insert a single patient. Returns the created patient dict.
+
+    Raises on duplicate phone_normalized (unique constraint).
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                INSERT INTO patients (first_name, last_name, phone, phone_normalized, email, notes, source)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, first_name, last_name, phone_normalized
+                """,
+                (first_name, last_name, phone, phone_normalized, email, notes, source),
+            )
+            result = cur.fetchone()
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
+
+def update_patient(
+    patient_id: str,
+    first_name: str,
+    last_name: str,
+    phone: str,
+    phone_normalized: str,
+    email: str = "",
+    notes: str = "",
+) -> dict:
+    """Update patient data. Returns the updated patient dict."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                UPDATE patients
+                SET first_name = %s, last_name = %s, phone = %s,
+                    phone_normalized = %s, email = %s, notes = %s,
+                    updated_at = now()
+                WHERE id = %s
+                RETURNING id, first_name, last_name, phone_normalized
+                """,
+                (first_name, last_name, phone, phone_normalized, email, notes, patient_id),
+            )
+            result = cur.fetchone()
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
+
+def delete_patients(patient_ids: list[str]) -> int:
+    """Delete patients by IDs. Returns count of deleted rows.
+
+    patient_tags cascade is handled by the DB constraint.
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM patients WHERE id = ANY(%s::uuid[])",
+                (patient_ids,),
+            )
+            deleted = cur.rowcount
+        conn.commit()
+        return deleted
     finally:
         conn.close()
 
