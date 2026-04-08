@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "No WhatsApp message received by admin after QR connection"
 created: 2026-04-01T00:00:00Z
 updated: 2026-04-01T00:02:00Z

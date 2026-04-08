@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "Evolution API corre pero WhatsApp rechaza la conexión con error 405 — bloqueo temporal de IP por demasiados intentos de conexión"
 created: 2026-03-31T23:10:00Z
 updated: 2026-03-31T23:20:00Z

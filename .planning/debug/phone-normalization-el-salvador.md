@@ -2,15 +2,15 @@
 status: awaiting_human_verify
 trigger: "Phone normalization produces all Error on CSV import for El Salvador numbers"
 created: 2026-04-01T00:00:00Z
-updated: 2026-04-01T00:01:00Z
+updated: 2026-04-07T00:00:00Z
 ---
 
 ## Current Focus
 
-hypothesis: CONFIRMED - Tests referenced nonexistent normalize_mx_phone and used Mexico phone data
-test: Full test suite run
-expecting: All 55 tests pass
-next_action: Await human verification of CSV import in Streamlit UI
+hypothesis: CONFIRMED - pandas reads numeric telefono column as float64 when any value is missing, producing "77546650.0" which has 9 digits and fails the 8-digit check
+test: Simulated CSV with missing phone -> all phones become float64 -> normalize_sv_phone gets "77546650.0" -> 9 digits -> Error
+expecting: Fix by converting telefono to int-string before normalization
+next_action: Apply fix to normalize_sv_phone or build_preview to strip .0 from float strings
 
 ## Symptoms
 
@@ -44,9 +44,19 @@ started: Always broken — code updated to SV but tests not updated
   found: All 55 tests pass (18 patient tests + 37 others), zero regressions
   implication: Fix is correct and complete
 
+- timestamp: 2026-04-07T00:00:00Z
+  checked: pandas dtype behavior with numeric phone columns
+  found: When CSV has any empty telefono cell, pandas reads entire column as float64. str(77546650.0) -> "77546650.0" -> after \D strip -> "775466500" (9 digits) -> fails 8-digit check
+  implication: THIS is the real production bug. The test fix was correct but insufficient -- the normalization function itself needs to handle float-string inputs
+
+- timestamp: 2026-04-07T00:00:00Z
+  checked: normalize_sv_phone with "77546650.0" input
+  found: re.sub(r"\D", "", "77546650.0") produces "775466500" (9 digits), function returns Error
+  implication: Confirmed root cause. Fix needed in normalize_sv_phone to handle decimal point in numeric strings
+
 ## Resolution
 
-root_cause: Tests were never updated when normalize_mx_phone was renamed to normalize_sv_phone. Test data still used Mexico phone format (10-digit numbers with +52 prefix).
-fix: Updated test_patients.py (import, class name, all test cases to El Salvador 8-digit format) and conftest.py (CSV fixture phone numbers to SV format). Added new tests for landline and country-code-in-CSV scenarios.
-verification: All 55 tests pass. No regressions.
-files_changed: [admin-ui/src/tests/test_patients.py, admin-ui/src/tests/conftest.py]
+root_cause: pandas reads the telefono CSV column as float64 when any cell is empty (or when exported from Excel). This converts 77546650 to 77546650.0. str(77546650.0) produces "77546650.0", and re.sub(r"\D", "") strips the dot but keeps the trailing "0", yielding 9 digits instead of 8. normalize_sv_phone rejects anything not exactly 8 digits.
+fix: Added float-string handling in normalize_sv_phone -- regex detects "DIGITS.0+" pattern and strips the decimal suffix before digit extraction. Also handles "nan" string from pandas NaN conversion. Added 4 regression tests.
+verification: All 59 tests pass (22 patient tests including 4 new ones for float/nan cases). End-to-end simulation with float64 DataFrame produces correct Nuevo/Error classification.
+files_changed: [admin-ui/src/components/patients.py, admin-ui/src/tests/test_patients.py]
