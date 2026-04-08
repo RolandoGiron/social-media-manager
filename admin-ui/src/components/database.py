@@ -358,3 +358,70 @@ def delete_template(template_id: str) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+# === Knowledge Base CRUD ===
+
+def fetch_knowledge_base(active_only: bool = True) -> list[dict]:
+    """Fetch knowledge base items, optionally filtering to active only.
+
+    Returns list of dicts ordered by categoria then created_at.
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            sql = "SELECT * FROM knowledge_base"
+            if active_only:
+                sql += " WHERE is_active = true"
+            sql += " ORDER BY categoria, created_at"
+            cur.execute(sql)
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+
+def upsert_knowledge_base_item(
+    item_id,
+    pregunta: str,
+    respuesta: str,
+    categoria: str,
+    is_active: bool = True,
+) -> dict:
+    """Insert or update a knowledge base item. Returns the saved row.
+
+    If item_id is truthy, performs UPDATE; otherwise performs INSERT.
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            if item_id:
+                sql = """
+                    UPDATE knowledge_base
+                    SET pregunta = %s, respuesta = %s, categoria = %s, is_active = %s
+                    WHERE id = %s
+                    RETURNING *
+                """
+                cur.execute(sql, (pregunta, respuesta, categoria, is_active, item_id))
+            else:
+                sql = """
+                    INSERT INTO knowledge_base (pregunta, respuesta, categoria, is_active)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING *
+                """
+                cur.execute(sql, (pregunta, respuesta, categoria, is_active))
+            result = cur.fetchone()
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
+
+def delete_knowledge_base_item(item_id: str) -> None:
+    """Delete a knowledge base item by ID."""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM knowledge_base WHERE id = %s", (item_id,))
+        conn.commit()
+    finally:
+        conn.close()

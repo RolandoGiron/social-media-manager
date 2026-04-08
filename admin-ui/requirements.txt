@@ -4,6 +4,7 @@ pandas
 openpyxl
 python-dotenv
 requests
+streamlit-autorefresh
 pytest>=7.0
 pytest-mock
 requests-mock
