@@ -304,10 +304,9 @@ elif st.session_state.pacientes_mode == "list":
         )
 
         # --- Bulk action bar (D-06) ---
-        if event and event.selection and event.selection.rows:
-            selected_ids = [
-                display_df.iloc[i]["id"] for i in event.selection.rows
-            ]
+        valid_rows = [i for i in (event.selection.rows if event and event.selection else []) if i < len(display_df)]
+        if valid_rows:
+            selected_ids = [display_df.iloc[i]["id"] for i in valid_rows]
 
             st.caption(f"{len(selected_ids)} pacientes seleccionados")
 
@@ -386,24 +385,27 @@ elif st.session_state.pacientes_mode == "list":
                         expanded=True,
                     ):
                         with st.form("edit_patient_form"):
-                            edit_col1, edit_col2 = st.columns(2)
-                            with edit_col1:
+                            e1, e2 = st.columns(2)
+                            with e1:
                                 edit_nombre = st.text_input(
                                     "Nombre *", value=patient_data.get("first_name", "")
                                 )
-                                edit_telefono = st.text_input(
-                                    "Telefono *", value=patient_data.get("phone", "")
-                                )
-                                edit_notas = st.text_area(
-                                    "Notas", value=patient_data.get("notes", "") or ""
-                                )
-                            with edit_col2:
+                            with e2:
                                 edit_apellido = st.text_input(
                                     "Apellido *", value=patient_data.get("last_name", "")
                                 )
+                            e3, e4 = st.columns(2)
+                            with e3:
+                                edit_telefono = st.text_input(
+                                    "Telefono *", value=patient_data.get("phone", "")
+                                )
+                            with e4:
                                 edit_email = st.text_input(
                                     "Email", value=patient_data.get("email", "") or ""
                                 )
+                            edit_notas = st.text_area(
+                                "Notas", value=patient_data.get("notes", "") or ""
+                            )
 
                             edit_submit = st.form_submit_button(
                                 "Guardar cambios", use_container_width=True
@@ -464,14 +466,20 @@ elif st.session_state.pacientes_mode == "list":
         # --- Create new patient form ---
         with st.expander("Nuevo paciente"):
             with st.form("create_patient_form"):
-                create_col1, create_col2 = st.columns(2)
-                with create_col1:
+                c1, c2 = st.columns(2)
+                with c1:
                     new_nombre = st.text_input("Nombre *", key="new_nombre")
-                    new_telefono = st.text_input("Telefono *", key="new_telefono")
-                    new_notas = st.text_area("Notas", key="new_notas")
-                with create_col2:
+                with c2:
                     new_apellido = st.text_input("Apellido *", key="new_apellido")
+                c3, c4 = st.columns(2)
+                with c3:
+                    new_telefono = st.text_input("Telefono *", key="new_telefono")
+                with c4:
                     new_email = st.text_input("Email", key="new_email")
+                c5, c6 = st.columns(2)
+                with c5:
+                    new_notas = st.text_area("Notas", key="new_notas")
+                with c6:
                     new_fuente = st.text_input("Fuente", value="manual", key="new_fuente")
 
                 create_submit = st.form_submit_button(
