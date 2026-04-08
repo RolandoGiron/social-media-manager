@@ -23,7 +23,7 @@
       "position": [480, 300],
       "parameters": {
         "dataType": "string",
-        "value1": "={{ $json.data.state }}",
+        "value1": "={{ $json.body.data.state }}",
         "rules": {
           "rules": [
             {
@@ -96,7 +96,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ number: $env.ADMIN_WHATSAPP_NUMBER, text: '\u26a0\ufe0f La sesion de WhatsApp se desconecto. Estado: ' + $json.data.state }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: $env.ADMIN_WHATSAPP_NUMBER, text: '\u26a0\ufe0f La sesion de WhatsApp se desconecto. Estado: ' + $json.body.data.state }) }}",
         "options": {}
       },
       "onError": "continueRegularOutput"
