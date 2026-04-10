@@ -258,8 +258,9 @@
         "operation": "getAll",
         "calendar": {
           "__rl": true,
-          "value": "={{ $vars.CLINIC_CALENDAR_ID || 'primary' }}",
-          "mode": "id"
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "primary"
         },
         "returnAll": true,
         "options": {
@@ -461,8 +462,9 @@
         "operation": "create",
         "calendar": {
           "__rl": true,
-          "value": "={{ $vars.CLINIC_CALENDAR_ID || 'primary' }}",
-          "mode": "id"
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "primary"
         },
         "start": "={{ $json.selected_slot.start }}",
         "end": "={{ $json.selected_slot.end }}",
@@ -548,8 +550,7 @@
       "parameters": {
         "mode": "chooseBranch",
         "chooseBranch": {
-          "mode": "waitForAll",
-          "output": 0
+          "mode": "waitForAll"
         },
         "options": {}
       }
