@@ -40,7 +40,7 @@
               "rightValue": false,
               "operator": {
                 "type": "boolean",
-                "operation": "equal"
+                "operation": "equals"
               }
             }
           ],
@@ -235,7 +235,7 @@
               "rightValue": "human_handoff",
               "operator": {
                 "type": "string",
-                "operation": "equal"
+                "operation": "equals"
               }
             }
           ],
@@ -266,7 +266,7 @@
               "rightValue": "booking_flow",
               "operator": {
                 "type": "string",
-                "operation": "equal"
+                "operation": "equals"
               }
             }
           ],
@@ -425,30 +425,102 @@
         400
       ],
       "parameters": {
-        "mode": "rules",
-        "dataType": "string",
-        "value1": "={{ $json.intent }}",
         "rules": {
-          "rules": [
+          "values": [
             {
-              "value2": "FAQ",
-              "output": 0
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rule-faq",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "FAQ",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "FAQ"
             },
             {
-              "value2": "BOOKING",
-              "output": 1
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rule-booking",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "BOOKING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "BOOKING"
             },
             {
-              "value2": "HANDOFF",
-              "output": 2
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rule-handoff",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "HANDOFF",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "HANDOFF"
             },
             {
-              "value2": "GREETING",
-              "output": 3
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rule-greeting",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "GREETING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "GREETING"
             }
           ]
         },
-        "fallbackOutput": 2
+        "options": {
+          "fallbackOutput": "extra",
+          "allMatchingOutputs": false
+        }
       }
     },
     {
@@ -989,6 +1061,13 @@
         [
           {
             "node": "Set Greeting Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Handoff Response",
             "type": "main",
             "index": 0
           }

@@ -22,26 +22,80 @@
         300
       ],
       "parameters": {
-        "mode": "rules",
-        "dataType": "string",
-        "value1": "={{ ($json.booking_context && $json.booking_context.booking_step) ? $json.booking_context.booking_step : 'awaiting_service_type' }}",
         "rules": {
-          "rules": [
+          "values": [
             {
-              "value2": "awaiting_service_type",
-              "output": 0
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rule-awaiting-service-type",
+                    "leftValue": "={{ ($json.booking_context && $json.booking_context.booking_step) ? $json.booking_context.booking_step : 'awaiting_service_type' }}",
+                    "rightValue": "awaiting_service_type",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "awaiting_service_type"
             },
             {
-              "value2": "awaiting_datetime",
-              "output": 1
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rule-awaiting-datetime",
+                    "leftValue": "={{ ($json.booking_context && $json.booking_context.booking_step) ? $json.booking_context.booking_step : 'awaiting_service_type' }}",
+                    "rightValue": "awaiting_datetime",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "awaiting_datetime"
             },
             {
-              "value2": "confirming_slot",
-              "output": 2
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rule-confirming-slot",
+                    "leftValue": "={{ ($json.booking_context && $json.booking_context.booking_step) ? $json.booking_context.booking_step : 'awaiting_service_type' }}",
+                    "rightValue": "confirming_slot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirming_slot"
             }
           ]
         },
-        "fallbackOutput": 0
+        "options": {
+          "fallbackOutput": "extra",
+          "allMatchingOutputs": false
+        }
       }
     },
     {
@@ -107,7 +161,7 @@
               "rightValue": "NEEDS_INPUT",
               "operator": {
                 "type": "string",
-                "operation": "notEqual"
+                "operation": "notEquals"
               }
             }
           ],
@@ -263,7 +317,7 @@
               "rightValue": false,
               "operator": {
                 "type": "boolean",
-                "operation": "equal"
+                "operation": "equals"
               }
             }
           ],
@@ -339,7 +393,7 @@
               "rightValue": true,
               "operator": {
                 "type": "boolean",
-                "operation": "equal"
+                "operation": "equals"
               }
             }
           ],
@@ -489,7 +543,7 @@
               "rightValue": true,
               "operator": {
                 "type": "boolean",
-                "operation": "equal"
+                "operation": "equals"
               }
             }
           ],
@@ -663,6 +717,13 @@
         [
           {
             "node": "Parse Slot Selection",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Service Type (OpenAI)",
             "type": "main",
             "index": 0
           }
