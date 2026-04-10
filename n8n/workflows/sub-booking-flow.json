@@ -6,7 +6,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {}
     },
     {
@@ -14,7 +17,10 @@
       "name": "Route by Booking Step",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [480, 300],
+      "position": [
+        480,
+        300
+      ],
       "parameters": {
         "mode": "rules",
         "dataType": "string",
@@ -43,7 +49,10 @@
       "name": "Extract Service Type (OpenAI)",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1,
-      "position": [720, 100],
+      "position": [
+        720,
+        100
+      ],
       "parameters": {
         "resource": "chat",
         "operation": "message",
@@ -81,12 +90,14 @@
       "name": "Service Type Found?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [960, 100],
+      "position": [
+        960,
+        100
+      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": false,
-            "leftValue": "",
             "typeValidation": "strict"
           },
           "conditions": [
@@ -110,7 +121,10 @@
       "name": "Set Service Type Saved",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1200, 50],
+      "position": [
+        1200,
+        50
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -142,7 +156,10 @@
       "name": "Set Ask Service Type",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1200, 200],
+      "position": [
+        1200,
+        200
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -174,7 +191,10 @@
       "name": "Extract Date and Time (OpenAI)",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1,
-      "position": [720, 350],
+      "position": [
+        720,
+        350
+      ],
       "parameters": {
         "resource": "chat",
         "operation": "message",
@@ -212,7 +232,10 @@
       "name": "Parse Date Time from LLM",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [960, 350],
+      "position": [
+        960,
+        350
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const llmResponse = $input.item.json.message.content.trim();\nconst trigger = $('Execute Workflow Trigger').first().json;\n\nlet parsed;\ntry {\n  parsed = JSON.parse(llmResponse);\n} catch (e) {\n  parsed = { error: 'NEEDS_INPUT' };\n}\n\nreturn {\n  json: {\n    parsed_date: parsed.date || null,\n    parsed_time: parsed.time || null,\n    has_error: !!(parsed.error),\n    booking_context: trigger.booking_context,\n    patient_id: trigger.patient_id,\n    patient_name: trigger.patient_name,\n    wa_contact_id: trigger.wa_contact_id,\n    remote_jid: trigger.remote_jid,\n    instance_name: trigger.instance_name,\n    api_key: trigger.api_key\n  }\n};"
@@ -223,12 +246,14 @@
       "name": "DateTime Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1200, 350],
+      "position": [
+        1200,
+        350
+      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
-            "leftValue": "",
             "typeValidation": "strict"
           },
           "conditions": [
@@ -252,7 +277,10 @@
       "name": "Get Calendar Events",
       "type": "n8n-nodes-base.googleCalendar",
       "typeVersion": 1.1,
-      "position": [1440, 250],
+      "position": [
+        1440,
+        250
+      ],
       "parameters": {
         "resource": "event",
         "operation": "getAll",
@@ -280,7 +308,10 @@
       "name": "Find Available Slots",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1680, 250],
+      "position": [
+        1680,
+        250
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "const items = $input.all();\nconst datetimeNode = $('Parse Date Time from LLM').first().json;\nconst trigger = $('Execute Workflow Trigger').first().json;\n\nconst targetDate = datetimeNode.parsed_date;\nconst targetTime = datetimeNode.parsed_time || '10:00';\n\n// Build list of busy periods from calendar events\nconst busySlots = items\n  .filter(item => item.json.start)\n  .map(item => ({\n    start: new Date(item.json.start.dateTime || item.json.start.date + 'T00:00:00').getTime(),\n    end: new Date(item.json.end.dateTime || item.json.end.date + 'T23:59:00').getTime()\n  }));\n\n// Generate 30-minute slots from 9:00 to 17:30\nconst slots = [];\nconst workStart = 9 * 60; // minutes from midnight\nconst workEnd = 17 * 60 + 30;\nconst slotDuration = 30;\n\nfor (let m = workStart; m + slotDuration <= workEnd + slotDuration; m += slotDuration) {\n  const slotStartHour = Math.floor(m / 60);\n  const slotStartMin = m % 60;\n  const slotEndMin = m + slotDuration;\n  const slotEndHour = Math.floor(slotEndMin / 60);\n  const slotEndMinute = slotEndMin % 60;\n\n  const startStr = targetDate + 'T' + String(slotStartHour).padStart(2,'0') + ':' + String(slotStartMin).padStart(2,'0') + ':00';\n  const endStr = targetDate + 'T' + String(slotEndHour).padStart(2,'0') + ':' + String(slotEndMinute).padStart(2,'0') + ':00';\n\n  const slotStartMs = new Date(startStr).getTime();\n  const slotEndMs = new Date(endStr).getTime();\n\n  // Check not overlapping with any busy slot\n  const isFree = !busySlots.some(busy => slotStartMs < busy.end && slotEndMs > busy.start);\n  if (isFree) {\n    slots.push({ start: startStr, end: endStr });\n  }\n}\n\n// Sort slots by proximity to preferred time\nconst [prefHour, prefMin] = (targetTime || '10:00').split(':').map(Number);\nconst prefMinutes = prefHour * 60 + (prefMin || 0);\nslots.sort((a, b) => {\n  const aMinutes = parseInt(a.start.split('T')[1].split(':')[0]) * 60 + parseInt(a.start.split('T')[1].split(':')[1]);\n  const bMinutes = parseInt(b.start.split('T')[1].split(':')[0]) * 60 + parseInt(b.start.split('T')[1].split(':')[1]);\n  return Math.abs(aMinutes - prefMinutes) - Math.abs(bMinutes - prefMinutes);\n});\n\nconst topSlots = slots.slice(0, 3);\n\n// Format slots for display\nconst formatSlot = (s) => {\n  const parts = s.start.split('T');\n  const timeParts = parts[1].split(':');\n  const dateParts = parts[0].split('-');\n  return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} a las ${timeParts[0]}:${timeParts[1]}`;\n};\n\nreturn [{\n  json: {\n    available_slots: topSlots,\n    slots_found: topSlots.length > 0,\n    target_date: targetDate,\n    slot_1: topSlots[0] ? formatSlot(topSlots[0]) : null,\n    slot_2: topSlots[1] ? formatSlot(topSlots[1]) : null,\n    slot_3: topSlots[2] ? formatSlot(topSlots[2]) : null,\n    booking_context: datetimeNode.booking_context,\n    patient_id: datetimeNode.patient_id,\n    patient_name: datetimeNode.patient_name,\n    wa_contact_id: datetimeNode.wa_contact_id,\n    remote_jid: datetimeNode.remote_jid,\n    instance_name: datetimeNode.instance_name,\n    api_key: datetimeNode.api_key\n  }\n}];"
@@ -291,12 +322,14 @@
       "name": "Slots Available?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1920, 250],
+      "position": [
+        1920,
+        250
+      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
-            "leftValue": "",
             "typeValidation": "strict"
           },
           "conditions": [
@@ -320,7 +353,10 @@
       "name": "Set Slots Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [2160, 150],
+      "position": [
+        2160,
+        150
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -352,7 +388,10 @@
       "name": "Set No Slots Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [2160, 350],
+      "position": [
+        2160,
+        350
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -384,7 +423,10 @@
       "name": "Set Ask DateTime",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1440, 450],
+      "position": [
+        1440,
+        450
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -416,7 +458,10 @@
       "name": "Parse Slot Selection",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 550],
+      "position": [
+        720,
+        550
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const trigger = $('Execute Workflow Trigger').first().json;\nconst messageText = trigger.message_text || '';\nconst bookingContext = trigger.booking_context || {};\nconst availableSlots = bookingContext.available_slots || [];\n\n// Parse selection: look for digit 1, 2, or 3\nconst match = messageText.match(/[123]/);\nconst selectionIndex = match ? parseInt(match[0]) - 1 : -1;\n\nconst selectedSlot = (selectionIndex >= 0 && selectionIndex < availableSlots.length)\n  ? availableSlots[selectionIndex]\n  : null;\n\nreturn {\n  json: {\n    valid_selection: selectedSlot !== null,\n    selected_slot: selectedSlot,\n    service_type: bookingContext.service_type || 'Consulta general',\n    patient_id: trigger.patient_id,\n    patient_name: bookingContext.patient_name || trigger.patient_name || 'Paciente',\n    wa_contact_id: trigger.wa_contact_id,\n    remote_jid: trigger.remote_jid,\n    instance_name: trigger.instance_name,\n    api_key: trigger.api_key\n  }\n};"
@@ -427,12 +472,14 @@
       "name": "Valid Slot Selection?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [960, 550],
+      "position": [
+        960,
+        550
+      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
-            "leftValue": "",
             "typeValidation": "strict"
           },
           "conditions": [
@@ -456,7 +503,10 @@
       "name": "Create Calendar Event",
       "type": "n8n-nodes-base.googleCalendar",
       "typeVersion": 1.1,
-      "position": [1200, 450],
+      "position": [
+        1200,
+        450
+      ],
       "parameters": {
         "resource": "event",
         "operation": "create",
@@ -485,7 +535,10 @@
       "name": "Insert Appointment",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1440, 450],
+      "position": [
+        1440,
+        450
+      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO appointments (patient_id, appointment_type, scheduled_at, google_event_id, duration_minutes, notes)\nVALUES (\n  CASE WHEN '{{ $('Parse Slot Selection').item.json.patient_id }}' = 'null' OR '{{ $('Parse Slot Selection').item.json.patient_id }}' = '' THEN NULL\n       ELSE '{{ $('Parse Slot Selection').item.json.patient_id }}'::uuid END,\n  '{{ $('Parse Slot Selection').item.json.service_type }}',\n  '{{ $('Parse Slot Selection').item.json.selected_slot.start }}'::timestamptz,\n  '{{ $json.id }}',\n  30,\n  'Agendada via chatbot'\n) RETURNING id, scheduled_at, google_event_id",
@@ -503,7 +556,10 @@
       "name": "Set Confirmation Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1680, 450],
+      "position": [
+        1680,
+        450
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const slotSelection = $('Parse Slot Selection').first().json;\nconst selectedSlot = slotSelection.selected_slot;\n\n// Format date for Spanish display\nconst slotStart = new Date(selectedSlot.start);\nconst day = String(slotStart.getDate()).padStart(2, '0');\nconst monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\nconst month = monthNames[slotStart.getMonth()];\nconst year = slotStart.getFullYear();\nconst hours = String(slotStart.getHours()).padStart(2, '0');\nconst minutes = String(slotStart.getMinutes()).padStart(2, '0');\n\nconst fechaFormatted = `${day} de ${month} de ${year}`;\nconst horaFormatted = `${hours}:${minutes}`;\n\nreturn {\n  json: {\n    response_text: `Cita confirmada para el ${fechaFormatted} a las ${horaFormatted}. Te esperamos en la clinica. Hasta pronto!`,\n    new_state: 'awaiting_intent',\n    new_context: JSON.stringify({ booking_step: 'complete' })\n  }\n};"
@@ -514,7 +570,10 @@
       "name": "Set Invalid Selection Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1200, 650],
+      "position": [
+        1200,
+        650
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -546,7 +605,10 @@
       "name": "Merge Booking Responses",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [2400, 400],
+      "position": [
+        2400,
+        400
+      ],
       "parameters": {
         "mode": "chooseBranch",
         "chooseBranch": {
@@ -560,7 +622,10 @@
       "name": "Set Final Output",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2640, 400],
+      "position": [
+        2640,
+        400
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "// Collect response from whichever branch ran\nconst item = $input.item.json;\nreturn {\n  json: {\n    response_text: item.response_text || 'Hubo un error. Por favor intenta de nuevo.',\n    new_state: item.new_state || 'booking_flow',\n    new_context: item.new_context || '{}'\n  }\n};"
@@ -858,8 +923,14 @@
     "executionOrder": "v1"
   },
   "tags": [
-    { "name": "chatbot" },
-    { "name": "sub-workflow" },
-    { "name": "booking" }
+    {
+      "name": "chatbot"
+    },
+    {
+      "name": "sub-workflow"
+    },
+    {
+      "name": "booking"
+    }
   ]
 }

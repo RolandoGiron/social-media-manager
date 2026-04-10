@@ -6,7 +6,10 @@
       "name": "Receive MESSAGES_UPSERT",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "webhookId": "whatsapp-messages-upsert",
       "parameters": {
         "httpMethod": "POST",
@@ -20,12 +23,14 @@
       "name": "Filter fromMe Messages",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [480, 300],
+      "position": [
+        480,
+        300
+      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
-            "leftValue": "",
             "typeValidation": "strict"
           },
           "conditions": [
@@ -49,7 +54,10 @@
       "name": "Extract Message Fields",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [720, 200],
+      "position": [
+        720,
+        200
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -99,7 +107,10 @@
       "name": "Read Conversation State",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [960, 200],
+      "position": [
+        960,
+        200
+      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT c.id, c.state, c.context, c.patient_id, c.wa_contact_id,\n       p.first_name, p.last_name, p.phone_normalized\nFROM conversations c\nLEFT JOIN patients p ON c.patient_id = p.id\nWHERE c.wa_contact_id = '{{ $json.remote_jid }}' AND c.state != 'closed'\nORDER BY c.last_message_at DESC NULLS LAST\nLIMIT 1",
@@ -117,12 +128,14 @@
       "name": "Conversation Exists?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1200, 200],
+      "position": [
+        1200,
+        200
+      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
-            "leftValue": "",
             "typeValidation": "strict"
           },
           "conditions": [
@@ -146,7 +159,10 @@
       "name": "Create New Conversation",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1440, 350],
+      "position": [
+        1440,
+        350
+      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "WITH patient_match AS (\n  SELECT id FROM patients\n  WHERE phone_normalized = regexp_replace('{{ $('Extract Message Fields').item.json.remote_jid }}', '[^0-9]', '', 'g')\n  LIMIT 1\n)\nINSERT INTO conversations (wa_contact_id, state, context, patient_id)\nSELECT\n  '{{ $('Extract Message Fields').item.json.remote_jid }}',\n  'awaiting_intent',\n  '{}'::jsonb,\n  (SELECT id FROM patient_match)\nRETURNING id, state, context, patient_id, wa_contact_id, NULL::text as first_name, NULL::text as last_name, NULL::text as phone_normalized",
@@ -164,7 +180,10 @@
       "name": "Merge Conversation Data",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [1680, 200],
+      "position": [
+        1680,
+        200
+      ],
       "parameters": {
         "mode": "chooseBranch",
         "chooseBranch": {
@@ -178,7 +197,10 @@
       "name": "Insert Inbound Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1920, 200],
+      "position": [
+        1920,
+        200
+      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO messages (conversation_id, direction, sender, content, wa_message_id)\nVALUES (\n  '{{ $json.id }}'::uuid,\n  'inbound',\n  'patient',\n  '{{ $('Extract Message Fields').item.json.message_text.replace(/'/g, \"''\") }}',\n  '{{ $('Extract Message Fields').item.json.wa_message_id }}'\n) RETURNING id",
@@ -196,12 +218,14 @@
       "name": "Is Human Handoff?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2160, 200],
+      "position": [
+        2160,
+        200
+      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
-            "leftValue": "",
             "typeValidation": "strict"
           },
           "conditions": [
@@ -225,12 +249,14 @@
       "name": "Is Booking Flow Active?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2400, 300],
+      "position": [
+        2400,
+        300
+      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
-            "leftValue": "",
             "typeValidation": "strict"
           },
           "conditions": [
@@ -254,7 +280,10 @@
       "name": "Continue Booking Flow",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [2640, 200],
+      "position": [
+        2640,
+        200
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -318,7 +347,10 @@
       "name": "Prepare Mid-Booking State Update",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2880, 200],
+      "position": [
+        2880,
+        200
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const item = $input.item.json;\nconst convData = $('Merge Conversation Data').first().json;\nconst extractFields = $('Extract Message Fields').first().json;\n\nreturn {\n  json: {\n    response_text: item.response_text || '',\n    new_state: item.new_state || 'booking_flow',\n    new_context: item.new_context || '{}',\n    conversation_id: convData.id,\n    remote_jid: extractFields.remote_jid,\n    instance_name: extractFields.instance_name,\n    api_key: extractFields.api_key\n  }\n};"
@@ -329,7 +361,10 @@
       "name": "Load Knowledge Base",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [2640, 400],
+      "position": [
+        2640,
+        400
+      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT pregunta, respuesta, categoria FROM knowledge_base WHERE is_active = true ORDER BY categoria",
@@ -347,7 +382,10 @@
       "name": "Format FAQs for LLM",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2880, 400],
+      "position": [
+        2880,
+        400
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "const items = $input.all();\nconst extractFields = $('Extract Message Fields').first().json;\nconst mergedConv = $('Merge Conversation Data').first().json;\n\n// Format all FAQ rows into a single string for LLM injection\nconst formattedFaqs = items.map(item => {\n  return `Q: ${item.json.pregunta}\\nA: ${item.json.respuesta}`;\n}).join('\\n---\\n');\n\nreturn [{\n  json: {\n    formatted_faqs: formattedFaqs || 'No hay informacion disponible en este momento.',\n    message_text: extractFields.message_text,\n    remote_jid: extractFields.remote_jid,\n    push_name: extractFields.push_name,\n    wa_message_id: extractFields.wa_message_id,\n    instance_name: extractFields.instance_name,\n    api_key: extractFields.api_key,\n    conversation_id: mergedConv.id,\n    conversation_state: mergedConv.state,\n    conversation_context: mergedConv.context || {}\n  }\n}];"
@@ -358,7 +396,10 @@
       "name": "Classify Intent",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [3120, 400],
+      "position": [
+        3120,
+        400
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -379,7 +420,10 @@
       "name": "Route by Intent",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [3360, 400],
+      "position": [
+        3360,
+        400
+      ],
       "parameters": {
         "mode": "rules",
         "dataType": "string",
@@ -412,7 +456,10 @@
       "name": "FAQ Answer",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [3600, 200],
+      "position": [
+        3600,
+        200
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -433,7 +480,10 @@
       "name": "Start Booking Flow",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [3600, 350],
+      "position": [
+        3600,
+        350
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -497,7 +547,10 @@
       "name": "Set Handoff Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [3600, 500],
+      "position": [
+        3600,
+        500
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -535,7 +588,10 @@
       "name": "Set Greeting Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [3600, 650],
+      "position": [
+        3600,
+        650
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -573,7 +629,10 @@
       "name": "Merge Intent Responses",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [3840, 400],
+      "position": [
+        3840,
+        400
+      ],
       "parameters": {
         "mode": "chooseBranch",
         "chooseBranch": {
@@ -588,7 +647,10 @@
       "name": "Check FAQ Triggers Handoff",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [4080, 400],
+      "position": [
+        4080,
+        400
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const item = $input.item.json;\nconst formatFaqs = $('Format FAQs for LLM').first().json;\n\n// Determine final state and response\nlet newState = item.new_state || 'awaiting_intent';\nlet responseText = item.response_text || '';\nlet newContext = item.new_context || '{}';\n\n// If FAQ response contains handoff phrase, escalate to human_handoff\nif (item.is_handoff === true || (responseText && responseText.includes('No tengo esa informacion'))) {\n  newState = 'human_handoff';\n}\n\n// For FAQ intent (no explicit new_state from faq-answer sub-workflow), set state back to awaiting_intent\nif (!item.new_state && !item.is_handoff) {\n  newState = 'awaiting_intent';\n}\n\nreturn {\n  json: {\n    response_text: responseText,\n    new_state: newState,\n    new_context: newContext,\n    conversation_id: formatFaqs.conversation_id,\n    remote_jid: formatFaqs.remote_jid,\n    instance_name: formatFaqs.instance_name,\n    api_key: formatFaqs.api_key\n  }\n};"
@@ -599,7 +661,10 @@
       "name": "Merge All Response Paths",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [4320, 300],
+      "position": [
+        4320,
+        300
+      ],
       "parameters": {
         "mode": "chooseBranch",
         "chooseBranch": {
@@ -614,7 +679,10 @@
       "name": "Update Conversation State",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [4560, 300],
+      "position": [
+        4560,
+        300
+      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "UPDATE conversations\nSET state = '{{ $json.new_state }}',\n    context = '{{ $json.new_context }}'::jsonb,\n    last_message_at = now()\nWHERE id = '{{ $json.conversation_id }}'::uuid\nRETURNING id, state",
@@ -632,7 +700,10 @@
       "name": "Insert Bot Response Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [4800, 300],
+      "position": [
+        4800,
+        300
+      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO messages (conversation_id, direction, sender, content)\nVALUES (\n  '{{ $('Merge All Response Paths').item.json.conversation_id }}'::uuid,\n  'outbound',\n  'bot',\n  '{{ $('Merge All Response Paths').item.json.response_text.replace(/'/g, \"''\") }}'\n) RETURNING id",
@@ -650,7 +721,10 @@
       "name": "Send WA Message",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [5040, 300],
+      "position": [
+        5040,
+        300
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -694,7 +768,10 @@
       "name": "End - Human Handoff Active",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [2640, 100],
+      "position": [
+        2640,
+        100
+      ],
       "parameters": {}
     }
   ],
@@ -1023,7 +1100,11 @@
     "executionOrder": "v1"
   },
   "tags": [
-    { "name": "whatsapp" },
-    { "name": "chatbot" }
+    {
+      "name": "whatsapp"
+    },
+    {
+      "name": "chatbot"
+    }
   ]
 }
