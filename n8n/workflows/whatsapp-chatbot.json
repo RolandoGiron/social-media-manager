@@ -221,11 +221,115 @@
       }
     },
     {
+      "id": "check-booking-flow-state",
+      "name": "Is Booking Flow Active?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2400, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-booking-state",
+              "leftValue": "={{ $('Merge Conversation Data').item.json.state }}",
+              "rightValue": "booking_flow",
+              "operator": {
+                "type": "string",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "booking-sub-workflow-mid",
+      "name": "Continue Booking Flow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [2640, 200],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "sub-booking-flow",
+          "mode": "name"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "schema": [
+            {
+              "name": "message_text",
+              "type": "string"
+            },
+            {
+              "name": "booking_context",
+              "type": "object"
+            },
+            {
+              "name": "patient_id",
+              "type": "string"
+            },
+            {
+              "name": "patient_name",
+              "type": "string"
+            },
+            {
+              "name": "wa_contact_id",
+              "type": "string"
+            },
+            {
+              "name": "remote_jid",
+              "type": "string"
+            },
+            {
+              "name": "instance_name",
+              "type": "string"
+            },
+            {
+              "name": "api_key",
+              "type": "string"
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "value": {
+            "message_text": "={{ $('Extract Message Fields').item.json.message_text }}",
+            "booking_context": "={{ $('Merge Conversation Data').item.json.context || {} }}",
+            "patient_id": "={{ $('Merge Conversation Data').item.json.patient_id || '' }}",
+            "patient_name": "={{ ($('Merge Conversation Data').item.json.first_name ? $('Merge Conversation Data').item.json.first_name + ' ' + ($('Merge Conversation Data').item.json.last_name || '') : $('Extract Message Fields').item.json.push_name) }}",
+            "wa_contact_id": "={{ $('Merge Conversation Data').item.json.wa_contact_id }}",
+            "remote_jid": "={{ $('Extract Message Fields').item.json.remote_jid }}",
+            "instance_name": "={{ $('Extract Message Fields').item.json.instance_name }}",
+            "api_key": "={{ $('Extract Message Fields').item.json.api_key }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "booking-after-mid-flow",
+      "name": "Prepare Mid-Booking State Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2880, 200],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst convData = $('Merge Conversation Data').first().json;\nconst extractFields = $('Extract Message Fields').first().json;\n\nreturn {\n  json: {\n    response_text: item.response_text || '',\n    new_state: item.new_state || 'booking_flow',\n    new_context: item.new_context || '{}',\n    conversation_id: convData.id,\n    remote_jid: extractFields.remote_jid,\n    instance_name: extractFields.instance_name,\n    api_key: extractFields.api_key\n  }\n};"
+      }
+    },
+    {
       "id": "load-knowledge-base",
       "name": "Load Knowledge Base",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [2400, 300],
+      "position": [2640, 400],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT pregunta, respuesta, categoria FROM knowledge_base WHERE is_active = true ORDER BY categoria",
@@ -243,7 +347,7 @@
       "name": "Format FAQs for LLM",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2640, 300],
+      "position": [2880, 400],
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "const items = $input.all();\nconst extractFields = $('Extract Message Fields').first().json;\nconst mergedConv = $('Merge Conversation Data').first().json;\n\n// Format all FAQ rows into a single string for LLM injection\nconst formattedFaqs = items.map(item => {\n  return `Q: ${item.json.pregunta}\\nA: ${item.json.respuesta}`;\n}).join('\\n---\\n');\n\nreturn [{\n  json: {\n    formatted_faqs: formattedFaqs || 'No hay informacion disponible en este momento.',\n    message_text: extractFields.message_text,\n    remote_jid: extractFields.remote_jid,\n    push_name: extractFields.push_name,\n    wa_message_id: extractFields.wa_message_id,\n    instance_name: extractFields.instance_name,\n    api_key: extractFields.api_key,\n    conversation_id: mergedConv.id,\n    conversation_state: mergedConv.state,\n    conversation_context: mergedConv.context || {}\n  }\n}];"
@@ -254,7 +358,7 @@
       "name": "Classify Intent",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [2880, 300],
+      "position": [3120, 400],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -275,7 +379,7 @@
       "name": "Route by Intent",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [3120, 300],
+      "position": [3360, 400],
       "parameters": {
         "mode": "rules",
         "dataType": "string",
@@ -308,7 +412,7 @@
       "name": "FAQ Answer",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [3360, 100],
+      "position": [3600, 200],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -325,41 +429,67 @@
       }
     },
     {
-      "id": "booking-response",
-      "name": "Set Booking Response",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [3360, 250],
+      "id": "booking-sub-workflow-new",
+      "name": "Start Booking Flow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [3600, 350],
       "parameters": {
-        "assignments": {
-          "assignments": [
+        "workflowId": {
+          "__rl": true,
+          "value": "sub-booking-flow",
+          "mode": "name"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "schema": [
             {
-              "id": "response_text",
-              "name": "response_text",
-              "value": "Claro, con gusto te ayudo a agendar una cita. Que tipo de servicio necesitas?",
+              "name": "message_text",
               "type": "string"
             },
             {
-              "id": "new_state",
-              "name": "new_state",
-              "value": "booking_flow",
+              "name": "booking_context",
+              "type": "object"
+            },
+            {
+              "name": "patient_id",
               "type": "string"
             },
             {
-              "id": "is_handoff",
-              "name": "is_handoff",
-              "value": false,
-              "type": "boolean"
+              "name": "patient_name",
+              "type": "string"
             },
             {
-              "id": "new_context",
-              "name": "new_context",
-              "value": "={{ JSON.stringify({ booking_step: 'awaiting_service_type' }) }}",
+              "name": "wa_contact_id",
+              "type": "string"
+            },
+            {
+              "name": "remote_jid",
+              "type": "string"
+            },
+            {
+              "name": "instance_name",
+              "type": "string"
+            },
+            {
+              "name": "api_key",
               "type": "string"
             }
-          ]
-        },
-        "options": {}
+          ],
+          "mappingMode": "defineBelow",
+          "value": {
+            "message_text": "={{ $('Extract Message Fields').item.json.message_text }}",
+            "booking_context": "={{ { booking_step: 'awaiting_service_type' } }}",
+            "patient_id": "={{ $('Merge Conversation Data').item.json.patient_id || '' }}",
+            "patient_name": "={{ ($('Merge Conversation Data').item.json.first_name ? $('Merge Conversation Data').item.json.first_name + ' ' + ($('Merge Conversation Data').item.json.last_name || '') : $('Extract Message Fields').item.json.push_name) }}",
+            "wa_contact_id": "={{ $('Merge Conversation Data').item.json.wa_contact_id }}",
+            "remote_jid": "={{ $('Extract Message Fields').item.json.remote_jid }}",
+            "instance_name": "={{ $('Extract Message Fields').item.json.instance_name }}",
+            "api_key": "={{ $('Extract Message Fields').item.json.api_key }}"
+          }
+        }
       }
     },
     {
@@ -367,7 +497,7 @@
       "name": "Set Handoff Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [3360, 400],
+      "position": [3600, 500],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -405,7 +535,7 @@
       "name": "Set Greeting Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [3360, 550],
+      "position": [3600, 650],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -443,7 +573,7 @@
       "name": "Merge Intent Responses",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [3600, 300],
+      "position": [3840, 400],
       "parameters": {
         "mode": "chooseBranch",
         "chooseBranch": {
@@ -458,10 +588,25 @@
       "name": "Check FAQ Triggers Handoff",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3840, 300],
+      "position": [4080, 400],
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const item = $input.item.json;\nconst formatFaqs = $('Format FAQs for LLM').first().json;\n\n// Determine final state and response\nlet newState = item.new_state || 'awaiting_intent';\nlet responseText = item.response_text || '';\nlet newContext = item.new_context || '{}';\n\n// If FAQ response contains handoff phrase, escalate to human_handoff\nif (item.is_handoff === true || (responseText && responseText.includes('No tengo esa informacion'))) {\n  newState = 'human_handoff';\n}\n\n// For FAQ intent (no explicit new_state from faq-answer sub-workflow), set state back to awaiting_intent\nif (!item.new_state && !item.is_handoff) {\n  newState = 'awaiting_intent';\n}\n\nreturn {\n  json: {\n    response_text: responseText,\n    new_state: newState,\n    new_context: newContext,\n    conversation_id: formatFaqs.conversation_id,\n    remote_jid: formatFaqs.remote_jid,\n    instance_name: formatFaqs.instance_name,\n    api_key: formatFaqs.api_key\n  }\n};"
+      }
+    },
+    {
+      "id": "merge-all-paths",
+      "name": "Merge All Response Paths",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [4320, 300],
+      "parameters": {
+        "mode": "chooseBranch",
+        "chooseBranch": {
+          "mode": "waitForAll",
+          "output": 0
+        },
+        "options": {}
       }
     },
     {
@@ -469,7 +614,7 @@
       "name": "Update Conversation State",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [4080, 300],
+      "position": [4560, 300],
       "parameters": {
         "operation": "executeQuery",
         "query": "UPDATE conversations\nSET state = '{{ $json.new_state }}',\n    context = '{{ $json.new_context }}'::jsonb,\n    last_message_at = now()\nWHERE id = '{{ $json.conversation_id }}'::uuid\nRETURNING id, state",
@@ -487,10 +632,10 @@
       "name": "Insert Bot Response Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [4320, 300],
+      "position": [4800, 300],
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO messages (conversation_id, direction, sender, content)\nVALUES (\n  '{{ $('Check FAQ Triggers Handoff').item.json.conversation_id }}'::uuid,\n  'outbound',\n  'bot',\n  '{{ $('Check FAQ Triggers Handoff').item.json.response_text.replace(/'/g, \"''\") }}'\n) RETURNING id",
+        "query": "INSERT INTO messages (conversation_id, direction, sender, content)\nVALUES (\n  '{{ $('Merge All Response Paths').item.json.conversation_id }}'::uuid,\n  'outbound',\n  'bot',\n  '{{ $('Merge All Response Paths').item.json.response_text.replace(/'/g, \"''\") }}'\n) RETURNING id",
         "options": {}
       },
       "credentials": {
@@ -505,7 +650,7 @@
       "name": "Send WA Message",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [4560, 300],
+      "position": [5040, 300],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -536,10 +681,10 @@
           ],
           "mappingMode": "defineBelow",
           "value": {
-            "remote_jid": "={{ $('Check FAQ Triggers Handoff').item.json.remote_jid }}",
-            "response_text": "={{ $('Check FAQ Triggers Handoff').item.json.response_text }}",
-            "instance_name": "={{ $('Check FAQ Triggers Handoff').item.json.instance_name }}",
-            "api_key": "={{ $('Check FAQ Triggers Handoff').item.json.api_key }}"
+            "remote_jid": "={{ $('Merge All Response Paths').item.json.remote_jid }}",
+            "response_text": "={{ $('Merge All Response Paths').item.json.response_text }}",
+            "instance_name": "={{ $('Merge All Response Paths').item.json.instance_name }}",
+            "api_key": "={{ $('Merge All Response Paths').item.json.api_key }}"
           }
         }
       }
@@ -549,7 +694,7 @@
       "name": "End - Human Handoff Active",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [2400, 100],
+      "position": [2640, 100],
       "parameters": {}
     }
   ],
@@ -661,7 +806,47 @@
         ],
         [
           {
+            "node": "Is Booking Flow Active?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Booking Flow Active?": {
+      "main": [
+        [
+          {
+            "node": "Continue Booking Flow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Load Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Booking Flow": {
+      "main": [
+        [
+          {
+            "node": "Prepare Mid-Booking State Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Mid-Booking State Update": {
+      "main": [
+        [
+          {
+            "node": "Merge All Response Paths",
             "type": "main",
             "index": 0
           }
@@ -712,7 +897,7 @@
         ],
         [
           {
-            "node": "Set Booking Response",
+            "node": "Start Booking Flow",
             "type": "main",
             "index": 0
           }
@@ -744,7 +929,7 @@
         ]
       ]
     },
-    "Set Booking Response": {
+    "Start Booking Flow": {
       "main": [
         [
           {
@@ -789,6 +974,17 @@
       ]
     },
     "Check FAQ Triggers Handoff": {
+      "main": [
+        [
+          {
+            "node": "Merge All Response Paths",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Response Paths": {
       "main": [
         [
           {
