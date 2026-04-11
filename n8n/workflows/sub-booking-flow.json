@@ -101,35 +101,21 @@
     {
       "id": "extract-service-type",
       "name": "Extract Service Type (OpenAI)",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         720,
         100
       ],
       "parameters": {
-        "resource": "chat",
-        "operation": "message",
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "id"
-        },
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "Extract the type of dermatology service the patient wants. Common types: Consulta general, Limpieza facial, Tratamiento de acne, Revision de lunares, Botox, Peeling quimico. If the patient has not specified a service type, respond with exactly 'NEEDS_INPUT'. If they specified a service, respond with ONLY the service name, nothing else."
-            },
-            {
-              "role": "user",
-              "content": "={{ $('Execute Workflow Trigger').item.json.message_text }}"
-            }
-          ]
-        },
-        "options": {
-          "temperature": 0.1
-        }
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Extract the type of dermatology service the patient wants. Common types: Consulta general, Limpieza facial, Tratamiento de acne, Revision de lunares, Botox, Peeling quimico. If the patient has not specified a service type, respond with exactly \\'NEEDS_INPUT\\'. If they specified a service, respond with ONLY the service name, nothing else.' }, { role: 'user', content: $('Execute Workflow Trigger').item.json.message_text }], temperature: 0.1 } }}",
+        "options": {}
       },
       "credentials": {
         "openAiApi": {
@@ -156,7 +142,7 @@
           "conditions": [
             {
               "id": "check-needs-input",
-              "leftValue": "={{ $json.message.content.trim() }}",
+              "leftValue": "={{ $json.choices[0].message.content.trim() }}",
               "rightValue": "NEEDS_INPUT",
               "operator": {
                 "type": "string",
@@ -184,7 +170,7 @@
             {
               "id": "response_text",
               "name": "response_text",
-              "value": "={{ 'Perfecto, ' + $json.message.content.trim() + '. Que fecha y hora te gustaria? Por ejemplo: manana a las 10am o el jueves 17 de abril a las 3pm.' }}",
+              "value": "={{ 'Perfecto, ' + $json.choices[0].message.content.trim() + '. Que fecha y hora te gustaria? Por ejemplo: manana a las 10am o el jueves 17 de abril a las 3pm.' }}",
               "type": "string"
             },
             {
@@ -196,7 +182,7 @@
             {
               "id": "new_context",
               "name": "new_context",
-              "value": "={{ JSON.stringify({ booking_step: 'awaiting_datetime', service_type: $json.message.content.trim(), patient_name: $('Execute Workflow Trigger').item.json.patient_name }) }}",
+              "value": "={{ JSON.stringify({ booking_step: 'awaiting_datetime', service_type: $json.choices[0].message.content.trim(), patient_name: $('Execute Workflow Trigger').item.json.patient_name }) }}",
               "type": "string"
             }
           ]
@@ -242,35 +228,21 @@
     {
       "id": "extract-datetime",
       "name": "Extract Date and Time (OpenAI)",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         720,
         350
       ],
       "parameters": {
-        "resource": "chat",
-        "operation": "message",
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "id"
-        },
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "={{ 'Extract the preferred appointment date and time from the patient message. Today is ' + $now.format('yyyy-MM-dd') + '. Return ONLY a JSON object with this exact format: {\"date\": \"YYYY-MM-DD\", \"time\": \"HH:mm\"}. If you cannot extract a clear date and time, return exactly: {\"error\": \"NEEDS_INPUT\"}. No explanation, no markdown, just the JSON.' }}"
-            },
-            {
-              "role": "user",
-              "content": "={{ $('Execute Workflow Trigger').item.json.message_text }}"
-            }
-          ]
-        },
-        "options": {
-          "temperature": 0.1
-        }
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Extract the preferred appointment date and time from the patient message. Today is ' + $now.format('yyyy-MM-dd') + '. Return ONLY a JSON object with this exact format: {\"date\": \"YYYY-MM-DD\", \"time\": \"HH:mm\"}. If you cannot extract a clear date and time, return exactly: {\"error\": \"NEEDS_INPUT\"}. No explanation, no markdown, just the JSON.' }, { role: 'user', content: $('Execute Workflow Trigger').item.json.message_text }], temperature: 0.1 } }}",
+        "options": {}
       },
       "credentials": {
         "openAiApi": {
@@ -290,7 +262,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const llmResponse = $input.item.json.message.content.trim();\nconst trigger = $('Execute Workflow Trigger').first().json;\n\nlet parsed;\ntry {\n  parsed = JSON.parse(llmResponse);\n} catch (e) {\n  parsed = { error: 'NEEDS_INPUT' };\n}\n\nreturn {\n  json: {\n    parsed_date: parsed.date || null,\n    parsed_time: parsed.time || null,\n    has_error: !!(parsed.error),\n    booking_context: trigger.booking_context,\n    patient_id: trigger.patient_id,\n    patient_name: trigger.patient_name,\n    wa_contact_id: trigger.wa_contact_id,\n    remote_jid: trigger.remote_jid,\n    instance_name: trigger.instance_name,\n    api_key: trigger.api_key\n  }\n};"
+        "jsCode": "const llmResponse = $input.item.json.choices[0].message.content.trim();\nconst trigger = $('Execute Workflow Trigger').first().json;\n\nlet parsed;\ntry {\n  parsed = JSON.parse(llmResponse);\n} catch (e) {\n  parsed = { error: 'NEEDS_INPUT' };\n}\n\nreturn {\n  json: {\n    parsed_date: parsed.date || null,\n    parsed_time: parsed.time || null,\n    has_error: !!(parsed.error),\n    booking_context: trigger.booking_context,\n    patient_id: trigger.patient_id,\n    patient_name: trigger.patient_name,\n    wa_contact_id: trigger.wa_contact_id,\n    remote_jid: trigger.remote_jid,\n    instance_name: trigger.instance_name,\n    api_key: trigger.api_key\n  }\n};"
       }
     },
     {

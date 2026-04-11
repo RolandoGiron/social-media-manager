@@ -12,32 +12,18 @@
     {
       "id": "openai-classify-intent",
       "name": "Classify Intent (OpenAI)",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [480, 300],
       "parameters": {
-        "resource": "chat",
-        "operation": "message",
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "id"
-        },
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "={{ 'You are a dermatology clinic assistant. Classify the patient\\'s message into one of these intents:\\n- FAQ: patient asks about hours, location, prices, services, or general information\\n- BOOKING: patient wants to schedule/book/make an appointment\\n- HANDOFF: patient has a medical complaint, is frustrated, or asks something you cannot answer\\n- GREETING: patient says hello or a generic greeting\\n\\nRespond with ONLY the intent label (FAQ, BOOKING, HANDOFF, or GREETING). No explanation.\\n\\nKnowledge base context:\\n' + $json.formatted_faqs }}"
-            },
-            {
-              "role": "user",
-              "content": "={{ $json.message_text }}"
-            }
-          ]
-        },
-        "options": {
-          "temperature": 0.1
-        }
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are a dermatology clinic assistant. Classify the patient\\'s message into one of these intents:\\n- FAQ: patient asks about hours, location, prices, services, or general information\\n- BOOKING: patient wants to schedule/book/make an appointment\\n- HANDOFF: patient has a medical complaint, is frustrated, or asks something you cannot answer\\n- GREETING: patient says hello or a generic greeting\\n\\nRespond with ONLY the intent label (FAQ, BOOKING, HANDOFF, or GREETING). No explanation.\\n\\nKnowledge base context:\\n' + $json.formatted_faqs }, { role: 'user', content: $json.message_text }], temperature: 0.1 } }}",
+        "options": {}
       },
       "credentials": {
         "openAiApi": {
@@ -58,7 +44,7 @@
             {
               "id": "intent",
               "name": "intent",
-              "value": "={{ $json.message.content.trim().toUpperCase() }}",
+              "value": "={{ $json.choices[0].message.content.trim().toUpperCase() }}",
               "type": "string"
             },
             {

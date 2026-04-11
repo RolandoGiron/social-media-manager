@@ -12,32 +12,18 @@
     {
       "id": "openai-faq-answer",
       "name": "Generate FAQ Answer (OpenAI)",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [480, 300],
       "parameters": {
-        "resource": "chat",
-        "operation": "message",
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "id"
-        },
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "={{ 'Eres la asistente virtual de la clinica dermatologica. Responde en espanol, de forma amable y concisa.\\n\\nUsa SOLAMENTE la informacion del siguiente knowledge base para responder. Si la pregunta no esta cubierta, responde exactamente: \"No tengo esa informacion. Te comunico con un miembro de nuestro equipo.\"\\n\\nKnowledge base:\\n' + $json.formatted_faqs }}"
-            },
-            {
-              "role": "user",
-              "content": "={{ $json.message_text }}"
-            }
-          ]
-        },
-        "options": {
-          "temperature": 0.3
-        }
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Eres la asistente virtual de la clinica dermatologica. Responde en espanol, de forma amable y concisa.\\n\\nUsa SOLAMENTE la informacion del siguiente knowledge base para responder. Si la pregunta no esta cubierta, responde exactamente: \"No tengo esa informacion. Te comunico con un miembro de nuestro equipo.\"\\n\\nKnowledge base:\\n' + $json.formatted_faqs }, { role: 'user', content: $json.message_text }], temperature: 0.3 } }}",
+        "options": {}
       },
       "credentials": {
         "openAiApi": {
@@ -58,13 +44,13 @@
             {
               "id": "response_text",
               "name": "response_text",
-              "value": "={{ $json.message.content }}",
+              "value": "={{ $json.choices[0].message.content }}",
               "type": "string"
             },
             {
               "id": "is_handoff",
               "name": "is_handoff",
-              "value": "={{ $json.message.content.includes('No tengo esa informacion') }}",
+              "value": "={{ $json.choices[0].message.content.includes('No tengo esa informacion') }}",
               "type": "boolean"
             }
           ]
