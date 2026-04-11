@@ -113,8 +113,7 @@
         "model": {
           "__rl": true,
           "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
+          "mode": "id"
         },
         "messages": {
           "values": [
@@ -255,8 +254,7 @@
         "model": {
           "__rl": true,
           "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
+          "mode": "id"
         },
         "messages": {
           "values": [
