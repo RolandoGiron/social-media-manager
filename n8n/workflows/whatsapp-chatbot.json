@@ -114,7 +114,9 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT c.id, c.state, c.context, c.patient_id, c.wa_contact_id,\n       p.first_name, p.last_name, p.phone_normalized\nFROM conversations c\nLEFT JOIN patients p ON c.patient_id = p.id\nWHERE c.wa_contact_id = '{{ $json.remote_jid }}' AND c.state != 'closed'\nORDER BY c.last_message_at DESC NULLS LAST\nLIMIT 1",
-        "options": {}
+        "options": {
+          "alwaysOutputData": true
+        }
       },
       "credentials": {
         "postgres": {
@@ -178,18 +180,15 @@
     {
       "id": "merge-conversation",
       "name": "Merge Conversation Data",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1680,
         200
       ],
       "parameters": {
-        "mode": "chooseBranch",
-        "chooseBranch": {
-          "mode": "waitForAll"
-        },
-        "options": {}
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: $input.item.json };"
       }
     },
     {
@@ -699,19 +698,15 @@
     {
       "id": "merge-intent-responses",
       "name": "Merge Intent Responses",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         3840,
         400
       ],
       "parameters": {
-        "mode": "chooseBranch",
-        "chooseBranch": {
-          "mode": "waitForAll",
-          "output": 0
-        },
-        "options": {}
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: $input.item.json };"
       }
     },
     {
@@ -731,19 +726,15 @@
     {
       "id": "merge-all-paths",
       "name": "Merge All Response Paths",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         4320,
         300
       ],
       "parameters": {
-        "mode": "chooseBranch",
-        "chooseBranch": {
-          "mode": "waitForAll",
-          "output": 0
-        },
-        "options": {}
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: $input.item.json };"
       }
     },
     {
@@ -917,7 +908,7 @@
           {
             "node": "Merge Conversation Data",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
@@ -1091,7 +1082,7 @@
           {
             "node": "Merge Intent Responses",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
@@ -1102,7 +1093,7 @@
           {
             "node": "Merge Intent Responses",
             "type": "main",
-            "index": 2
+            "index": 0
           }
         ]
       ]
@@ -1113,7 +1104,7 @@
           {
             "node": "Merge Intent Responses",
             "type": "main",
-            "index": 3
+            "index": 0
           }
         ]
       ]
@@ -1135,7 +1126,7 @@
           {
             "node": "Merge All Response Paths",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]

@@ -657,18 +657,15 @@
     {
       "id": "merge-booking-responses",
       "name": "Merge Booking Responses",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         2400,
         400
       ],
       "parameters": {
-        "mode": "chooseBranch",
-        "chooseBranch": {
-          "mode": "waitForAll"
-        },
-        "options": {}
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: $input.item.json };"
       }
     },
     {
@@ -776,7 +773,7 @@
           {
             "node": "Merge Booking Responses",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
@@ -867,7 +864,7 @@
           {
             "node": "Merge Booking Responses",
             "type": "main",
-            "index": 2
+            "index": 0
           }
         ]
       ]
@@ -878,7 +875,7 @@
           {
             "node": "Merge Booking Responses",
             "type": "main",
-            "index": 3
+            "index": 0
           }
         ]
       ]
@@ -889,7 +886,7 @@
           {
             "node": "Merge Booking Responses",
             "type": "main",
-            "index": 4
+            "index": 0
           }
         ]
       ]
@@ -951,7 +948,7 @@
           {
             "node": "Merge Booking Responses",
             "type": "main",
-            "index": 5
+            "index": 0
           }
         ]
       ]
@@ -962,7 +959,7 @@
           {
             "node": "Merge Booking Responses",
             "type": "main",
-            "index": 6
+            "index": 0
           }
         ]
       ]
