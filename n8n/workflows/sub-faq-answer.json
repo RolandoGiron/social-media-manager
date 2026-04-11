@@ -27,7 +27,7 @@
           "values": [
             {
               "role": "system",
-              "content": "Eres la asistente virtual de la clinica dermatologica. Responde en espanol, de forma amable y concisa.\n\nUsa SOLAMENTE la informacion del siguiente knowledge base para responder. Si la pregunta no esta cubierta, responde exactamente: \"No tengo esa informacion. Te comunico con un miembro de nuestro equipo.\"\n\nKnowledge base:\n={{ $json.formatted_faqs }}"
+              "content": "={{ 'Eres la asistente virtual de la clinica dermatologica. Responde en espanol, de forma amable y concisa.\\n\\nUsa SOLAMENTE la informacion del siguiente knowledge base para responder. Si la pregunta no esta cubierta, responde exactamente: \"No tengo esa informacion. Te comunico con un miembro de nuestro equipo.\"\\n\\nKnowledge base:\\n' + $json.formatted_faqs }}"
             },
             {
               "role": "user",
