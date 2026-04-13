@@ -13,11 +13,13 @@ pacientes = st.Page("pages/3_Pacientes.py", title="Pacientes", icon=":material/p
 plantillas = st.Page("pages/4_Plantillas.py", title="Plantillas", icon=":material/article:")
 inbox = st.Page("pages/5_Inbox.py", title="Inbox", icon=":material/inbox:")
 knowledge_base = st.Page("pages/6_Knowledge_Base.py", title="Knowledge Base", icon=":material/school:")
+campanhas = st.Page("pages/7_Campañas.py", title="Campañas", icon=":material/send:")
 
 pg = st.navigation({
     "Principal": [dashboard],
     "CRM": [pacientes, plantillas],
     "Chatbot": [inbox, knowledge_base],
+    "Campañas": [campanhas],
     "Conexion": [whatsapp],
 })
 pg.run()
