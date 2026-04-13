@@ -56,7 +56,11 @@ Streamlit renders these roles with the following native widget mappings:
 | Body | `st.write` / `st.markdown` | 16px | 400 (regular) | 1.5 |
 | Label | `st.caption` | 14px | 400 (regular) | 1.4 |
 | Heading | `st.subheader` | 20px | 600 (semibold) | 1.2 |
-| Display | `st.title` | 28px | 700 (bold) | 1.2 |
+| Display | `st.title` | 28px | 600 (semibold) | 1.2 |
+
+Declared weights: **400 (regular)** and **600 (semibold)** only. Maximum 2 weights enforced.
+
+Note: `st.title` renders with Streamlit's own internal bold styling at the browser level — this is framework behavior, not a declared spec weight. The spec weight for the Display role is 600 (semibold); the visual output may appear heavier due to Streamlit's default CSS, which is outside this contract's control.
 
 Rules:
 - Page title: `st.title("Campañas")` — matches all existing pages.
