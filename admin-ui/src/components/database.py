@@ -538,3 +538,154 @@ def insert_appointment(
         return result
     finally:
         conn.close()
+
+
+# ---------- Campaigns (Phase 5) ----------
+
+def fetch_patients_by_tags(tag_ids: list[str]) -> list[dict]:
+    """Fetch DISTINCT patients matching ANY of the given tag UUIDs.
+
+    Returns list of dicts: id, first_name, last_name, phone_normalized.
+    Empty tag_ids returns [] without hitting the DB.
+    """
+    if not tag_ids:
+        return []
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT DISTINCT p.id, p.first_name, p.last_name, p.phone_normalized
+                FROM patients p
+                JOIN patient_tags pt ON p.id = pt.patient_id
+                WHERE pt.tag_id = ANY(%s::uuid[])
+                ORDER BY p.first_name, p.last_name
+                """,
+                (tag_ids,),
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+
+def insert_campaign(
+    campaign_name: str,
+    template_id: str,
+    segment_tags: list[str],
+    total_recipients: int,
+) -> dict:
+    """Insert a new campaign_log row with status='pending'. Returns {id}."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                INSERT INTO campaign_log
+                    (campaign_name, template_id, segment_tags, total_recipients, status)
+                VALUES (%s, %s, %s::uuid[], %s, 'pending')
+                RETURNING id
+                """,
+                (campaign_name, template_id, segment_tags, total_recipients),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return row
+    finally:
+        conn.close()
+
+
+def insert_campaign_recipients(campaign_id: str, patient_ids: list[str]) -> int:
+    """Batch insert N recipient rows. Returns count inserted."""
+    if not patient_ids:
+        return 0
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            values = [(campaign_id, pid) for pid in patient_ids]
+            execute_values(
+                cur,
+                "INSERT INTO campaign_recipients (campaign_id, patient_id) VALUES %s",
+                values,
+            )
+            count = cur.rowcount
+        conn.commit()
+        return count
+    finally:
+        conn.close()
+
+
+def fetch_campaign_status(campaign_id: str) -> dict | None:
+    """Return campaign progress dict or None.
+
+    Keys: id, campaign_name, sent_count, failed_count, total_recipients, status,
+          started_at, completed_at, cancelled_at, created_at.
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, campaign_name, sent_count, failed_count, total_recipients,
+                       status, started_at, completed_at, cancelled_at, created_at
+                FROM campaign_log
+                WHERE id = %s
+                """,
+                (campaign_id,),
+            )
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+
+def cancel_campaign(campaign_id: str) -> None:
+    """Set campaign_log.status='cancelled' and cancelled_at=now()."""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE campaign_log
+                SET status = 'cancelled', cancelled_at = now()
+                WHERE id = %s
+                """,
+                (campaign_id,),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def fetch_campaign_history(limit: int = 50) -> list[dict]:
+    """Return all campaigns ordered by created_at DESC with concatenated tag names.
+
+    Each row has: id, campaign_name, segment_tag_names (TEXT), sent_count,
+    failed_count, total_recipients, status, created_at.
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT
+                    cl.id,
+                    cl.campaign_name,
+                    cl.sent_count,
+                    cl.failed_count,
+                    cl.total_recipients,
+                    cl.status,
+                    cl.created_at,
+                    COALESCE(
+                        (SELECT string_agg(t.name, ', ')
+                         FROM tags t
+                         WHERE t.id = ANY(cl.segment_tags)),
+                        ''
+                    ) AS segment_tag_names
+                FROM campaign_log cl
+                ORDER BY cl.created_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
