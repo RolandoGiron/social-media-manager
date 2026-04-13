@@ -87,7 +87,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n  cr.id AS recipient_id,\n  cr.campaign_id,\n  p.id AS patient_id,\n  p.first_name,\n  p.last_name,\n  p.phone_normalized,\n  mt.body AS template_body\nFROM campaign_recipients cr\nJOIN patients p ON p.id = cr.patient_id\nJOIN campaign_log cl ON cl.id = cr.campaign_id\nLEFT JOIN message_templates mt ON mt.id = cl.template_id\nWHERE cr.campaign_id = '{{ $('Extract Campaign ID').first().json.campaign_id }}'::uuid\n  AND cr.status = 'pending'\nORDER BY cr.id",
+        "query": "SELECT\n  cr.id AS recipient_id,\n  cr.campaign_id,\n  p.id AS patient_id,\n  p.first_name,\n  p.last_name,\n  p.phone_normalized,\n  mt.body AS template_body\nFROM campaign_recipients cr\nJOIN patients p ON p.id = cr.patient_id\nJOIN campaign_log cl ON cl.id = cr.campaign_id\nLEFT JOIN message_templates mt ON mt.id = cl.template_id\nWHERE cr.campaign_id = '{{ $json.id }}'::uuid\n  AND cr.status = 'pending'\nORDER BY cr.id",
         "options": {}
       },
       "credentials": {
@@ -122,7 +122,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT status\nFROM campaign_log\nWHERE id = '{{ $('Extract Campaign ID').first().json.campaign_id }}'::uuid",
+        "query": "SELECT status\nFROM campaign_log\nWHERE id = '{{ $json.campaign_id }}'::uuid",
         "options": {}
       },
       "credentials": {
@@ -305,7 +305,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE campaign_recipients\nSET status = 'sent',\n    wa_message_id = '{{ $json.body.key.id }}',\n    sent_at = now()\nWHERE id = '{{ $('Merge Recipient and Status').item.json.recipient_id }}'::uuid;\n\nUPDATE campaign_log\nSET sent_count = sent_count + 1\nWHERE id = '{{ $('Extract Campaign ID').first().json.campaign_id }}'::uuid;",
+        "query": "UPDATE campaign_recipients\nSET status = 'sent',\n    wa_message_id = '{{ $json.body.key.id }}',\n    sent_at = now()\nWHERE id = '{{ $('Merge Recipient and Status').item.json.recipient_id }}'::uuid;\n\nUPDATE campaign_log\nSET sent_count = sent_count + 1\nWHERE id = '{{ $('Merge Recipient and Status').item.json.campaign_id }}'::uuid;",
         "options": {}
       },
       "credentials": {
@@ -326,7 +326,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE campaign_recipients\nSET status = 'failed',\n    error_message = '{{ ($json.error || ($json.body && $json.body.message) || \"unknown\").toString().replace(/'/g, \"''\").substring(0, 500) }}'\nWHERE id = '{{ $('Merge Recipient and Status').item.json.recipient_id }}'::uuid;\n\nUPDATE campaign_log\nSET failed_count = failed_count + 1\nWHERE id = '{{ $('Extract Campaign ID').first().json.campaign_id }}'::uuid;",
+        "query": "UPDATE campaign_recipients\nSET status = 'failed',\n    error_message = '{{ ($json.error || ($json.body && $json.body.message) || \"unknown\").toString().replace(/'/g, \"''\").substring(0, 500) }}'\nWHERE id = '{{ $('Merge Recipient and Status').item.json.recipient_id }}'::uuid;\n\nUPDATE campaign_log\nSET failed_count = failed_count + 1\nWHERE id = '{{ $('Merge Recipient and Status').item.json.campaign_id }}'::uuid;",
         "options": {}
       },
       "credentials": {
@@ -347,7 +347,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE campaign_log\nSET status = CASE WHEN status = 'cancelled' THEN 'cancelled' ELSE 'completed' END,\n    completed_at = now()\nWHERE id = '{{ $('Extract Campaign ID').first().json.campaign_id }}'::uuid",
+        "query": "UPDATE campaign_log\nSET status = CASE WHEN status = 'cancelled' THEN 'cancelled' ELSE 'completed' END,\n    completed_at = now()\nWHERE id = '{{ $('Load Recipients').first().json.campaign_id }}'::uuid",
         "options": {}
       },
       "credentials": {
