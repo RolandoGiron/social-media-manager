@@ -1,0 +1,489 @@
+{
+  "name": "campaign-blast",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "campaigns" },
+    { "name": "phase-5" }
+  ],
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "campaign-blast-webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "campaign-blast",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "extract-campaign-id",
+      "name": "Extract Campaign ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "campaign_id",
+              "name": "campaign_id",
+              "value": "={{ $json.body.campaign_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "keepOnlySet": false
+        }
+      }
+    },
+    {
+      "id": "mark-in-progress",
+      "name": "Mark In Progress",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [720, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE campaign_log\nSET status = 'in_progress', started_at = now()\nWHERE id = '{{ $json.campaign_id }}'::uuid\nRETURNING id",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "load-recipients",
+      "name": "Load Recipients",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [960, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  cr.id AS recipient_id,\n  cr.campaign_id,\n  p.id AS patient_id,\n  p.first_name,\n  p.last_name,\n  p.phone_normalized,\n  mt.body AS template_body\nFROM campaign_recipients cr\nJOIN patients p ON p.id = cr.patient_id\nJOIN campaign_log cl ON cl.id = cr.campaign_id\nLEFT JOIN message_templates mt ON mt.id = cl.template_id\nWHERE cr.campaign_id = '{{ $('extract-campaign-id').item.json.campaign_id }}'::uuid\n  AND cr.status = 'pending'\nORDER BY cr.id",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "loop-recipients",
+      "name": "Loop Recipients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1200, 300],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "check-cancelled",
+      "name": "Check Cancelled",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1440, 200],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT status\nFROM campaign_log\nWHERE id = '{{ $('extract-campaign-id').item.json.campaign_id }}'::uuid",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "merge-recipient-and-status",
+      "name": "Merge Recipient and Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1680, 200],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const recipient = $('loop-recipients').item.json;\nconst statusRow = $input.item.json;\nreturn { json: { ...recipient, campaign_status: statusRow.status } };"
+      }
+    },
+    {
+      "id": "is-cancelled",
+      "name": "Is Cancelled?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1920, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-campaign-status",
+              "leftValue": "={{ $json.campaign_status }}",
+              "rightValue": "cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "compute-jitter",
+      "name": "Compute Jitter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 300],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst delay_ms = Math.floor(Math.random() * 5000) + 3000; // 3000-8000\n// Render template body with patient first_name as a minimal substitution\nconst body = item.template_body || '';\nconst rendered = body\n  .replace(/\\{\\{nombre\\}\\}/g, item.first_name || '')\n  .replace(/\\{\\{telefono\\}\\}/g, item.phone_normalized || '');\nreturn { json: { ...item, delay_ms, rendered_text: rendered } };"
+      }
+    },
+    {
+      "id": "wait-jitter",
+      "name": "Wait Jitter",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2400, 300],
+      "parameters": {
+        "amount": "={{ $json.delay_ms }}",
+        "unit": "ms"
+      }
+    },
+    {
+      "id": "send-whatsapp",
+      "name": "Send WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2640, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "=http://evolution-api:8080/message/sendText/{{ $env.EVOLUTION_INSTANCE_NAME }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.phone_normalized }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.rendered_text }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "send-success",
+      "name": "Send Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2880, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-status-code-gte",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "check-status-code-lte",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 299,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "update-sent",
+      "name": "Update Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [3120, 200],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE campaign_recipients\nSET status = 'sent',\n    wa_message_id = '{{ $json.body.key.id }}',\n    sent_at = now()\nWHERE id = '{{ $('merge-recipient-and-status').item.json.recipient_id }}'::uuid;\n\nUPDATE campaign_log\nSET sent_count = sent_count + 1\nWHERE id = '{{ $('extract-campaign-id').item.json.campaign_id }}'::uuid;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "update-failed",
+      "name": "Update Failed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [3120, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE campaign_recipients\nSET status = 'failed',\n    error_message = '{{ ($json.error || ($json.body && $json.body.message) || \"unknown\").toString().replace(/'/g, \"''\").substring(0, 500) }}'\nWHERE id = '{{ $('merge-recipient-and-status').item.json.recipient_id }}'::uuid;\n\nUPDATE campaign_log\nSET failed_count = failed_count + 1\nWHERE id = '{{ $('extract-campaign-id').item.json.campaign_id }}'::uuid;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "finalize-status",
+      "name": "Finalize Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1440, 420],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE campaign_log\nSET status = CASE WHEN status = 'cancelled' THEN 'cancelled' ELSE 'completed' END,\n    completed_at = now()\nWHERE id = '{{ $('extract-campaign-id').item.json.campaign_id }}'::uuid",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Campaign ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Campaign ID": {
+      "main": [
+        [
+          {
+            "node": "Mark In Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark In Progress": {
+      "main": [
+        [
+          {
+            "node": "Load Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Recipients": {
+      "main": [
+        [
+          {
+            "node": "Loop Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Recipients": {
+      "main": [
+        [
+          {
+            "node": "Check Cancelled",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Cancelled": {
+      "main": [
+        [
+          {
+            "node": "Merge Recipient and Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Recipient and Status": {
+      "main": [
+        [
+          {
+            "node": "Is Cancelled?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Cancelled?": {
+      "main": [
+        [
+          {
+            "node": "Loop Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compute Jitter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Jitter": {
+      "main": [
+        [
+          {
+            "node": "Wait Jitter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Jitter": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Send Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Success?": {
+      "main": [
+        [
+          {
+            "node": "Update Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Sent": {
+      "main": [
+        [
+          {
+            "node": "Loop Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Failed": {
+      "main": [
+        [
+          {
+            "node": "Loop Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
