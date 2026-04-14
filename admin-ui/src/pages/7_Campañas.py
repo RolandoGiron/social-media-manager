@@ -1,6 +1,9 @@
-"""7_Campañas.py — Phase 5 broadcast launch + monitor (WA-02, WA-03, WA-04)."""
+"""7_Campañas.py — Phase 5 broadcast launch + monitor (WA-02, WA-03, WA-04).
+
+Phase 6 extension: Step 3 — optional social post linked to campaign (SOCIAL-02).
+"""
 import os
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 import requests
 import streamlit as st
@@ -14,8 +17,14 @@ from components.database import (
     fetch_templates,
     insert_campaign,
     insert_campaign_recipients,
+    insert_social_post,
 )
 from components.sidebar import render_sidebar
+from components.social_posts import (
+    MX_TZ,
+    combine_local_datetime,
+    save_uploaded_image,
+)
 from components.templates import render_preview
 
 render_sidebar()
@@ -26,6 +35,14 @@ st.session_state.setdefault("campanas_selected_tag_ids", [])
 st.session_state.setdefault("campanas_selected_template_id", None)
 st.session_state.setdefault("campanas_active_campaign_id", None)
 st.session_state.setdefault("campanas_recipient_count", 0)
+# Phase 6 Step 3 — social publishing extension
+st.session_state.setdefault("campanas_publish_social", False)
+st.session_state.setdefault("campanas_social_caption", "")
+st.session_state.setdefault("campanas_social_image_bytes", None)
+st.session_state.setdefault("campanas_social_image_name", None)
+st.session_state.setdefault("campanas_social_platforms", ["Instagram", "Facebook"])
+st.session_state.setdefault("campanas_social_date", date.today())
+st.session_state.setdefault("campanas_social_time", (datetime.now() + timedelta(minutes=15)).time())
 
 SPANISH_MONTHS = {
     1: "ene", 2: "feb", 3: "mar", 4: "abr", 5: "may", 6: "jun",
@@ -47,6 +64,89 @@ def _trigger_n8n_webhook(campaign_id: str) -> bool:
         return False
 
 
+def _trigger_n8n_social_webhook(post_id: str) -> bool:
+    base_url = os.environ.get("N8N_WEBHOOK_BASE_URL", "http://n8n:5678")
+    url = f"{base_url}/webhook/social-publish"
+    try:
+        resp = requests.post(url, json={"post_id": post_id}, timeout=5)
+        return 200 <= resp.status_code < 300
+    except requests.RequestException:
+        return False
+
+
+def _handle_launch_campaign(recipient_ids: list, recipient_count: int) -> None:
+    """Handle the launch campaign confirm action.
+
+    Runs the existing Phase 5 path (insert + WA webhook) then optionally
+    adds a linked social_posts row and triggers the social webhook (Phase 6 Step 3).
+    This function is extracted to allow unit testing without executing the full
+    module-level Streamlit render.
+    """
+    tags = st.session_state.get("_campanas_tags_cache", [])
+    selected_tag_ids = st.session_state.get("campanas_selected_tag_ids", [])
+    selected_template = st.session_state.get("_campanas_selected_template_cache")
+
+    primary_tag_name = next(
+        (t["name"] for t in tags if str(t["id"]) == str(selected_tag_ids[0])),
+        "campa\u00f1a",
+    ) if selected_tag_ids else "campa\u00f1a"
+    campaign_name = f"{primary_tag_name} \u00b7 {_format_date(datetime.now())}"
+
+    try:
+        row = insert_campaign(
+            campaign_name=campaign_name,
+            template_id=selected_template["id"],
+            segment_tags=[str(tid) for tid in selected_tag_ids],
+            total_recipients=recipient_count,
+        )
+        new_id = row["id"]
+        insert_campaign_recipients(new_id, recipient_ids)
+    except Exception as exc:
+        st.error("Error al guardar la campa\u00f1a. Intenta de nuevo.")
+        st.caption(f"Detalle t\u00e9cnico: {exc}")
+        st.stop()
+
+    # Phase 6 Step 3: optionally create a social post linked to this campaign
+    social_post_id = None
+    if st.session_state.get("campanas_publish_social"):
+        try:
+            rel_path = save_uploaded_image(
+                st.session_state.campanas_social_image_bytes,
+                st.session_state.campanas_social_image_name or "image.jpg",
+            )
+            social_row = insert_social_post(
+                caption=st.session_state.campanas_social_caption,
+                image_url=rel_path,
+                platforms=st.session_state.campanas_social_platforms,
+                scheduled_at=combine_local_datetime(
+                    st.session_state.campanas_social_date,
+                    st.session_state.campanas_social_time,
+                ),
+                campaign_id=str(new_id),
+            )
+            social_post_id = str(social_row["id"])
+        except Exception:
+            st.warning(
+                "Campa\u00f1a WA preparada, pero el post social fall\u00f3 al guardarse. "
+                "Rev\u00edsalo en Publicaciones."
+            )
+
+    if not _trigger_n8n_webhook(str(new_id)):
+        st.error("Error al iniciar la campa\u00f1a. Verifica que n8n est\u00e9 activo e intenta de nuevo.")
+        st.stop()
+
+    # Best-effort: trigger social webhook only after WA webhook succeeded
+    if social_post_id and not _trigger_n8n_social_webhook(social_post_id):
+        st.warning(
+            "Campa\u00f1a WA iniciada, pero el post social fall\u00f3 al encolarse. "
+            "Rev\u00edsalo en Publicaciones."
+        )
+
+    st.session_state.campanas_active_campaign_id = str(new_id)
+    st.session_state.campanas_mode = "progress"
+    st.rerun()
+
+
 st.title("Campañas")
 
 # =============================================================================
@@ -61,6 +161,8 @@ if st.session_state.campanas_mode == "setup":
     except Exception:
         tags = []
         st.error("Error al cargar etiquetas.")
+    # Cache for _handle_launch_campaign (needed after button click)
+    st.session_state["_campanas_tags_cache"] = tags
 
     name_to_id = {tag["name"]: str(tag["id"]) for tag in tags}
 
@@ -92,6 +194,8 @@ if st.session_state.campanas_mode == "setup":
         st.session_state.campanas_selected_template_id = str(selected_template["id"])
     else:
         st.session_state.campanas_selected_template_id = None
+    # Cache selected_template for _handle_launch_campaign
+    st.session_state["_campanas_selected_template_cache"] = selected_template
 
     # Fetch recipients and compute count
     if selected_tag_ids:
@@ -124,16 +228,81 @@ if st.session_state.campanas_mode == "setup":
 
     st.markdown("---")
 
+    # -----------------------------------------------------------------------
+    # Step 3 — Publicar también en redes (opcional) — Phase 6 SOCIAL-02
+    # -----------------------------------------------------------------------
+    st.subheader("Paso 3 \u2014 Publicar tambi\u00e9n en redes (opcional)")
+    publish_social = st.checkbox(
+        "Publicar en redes sociales junto con la campa\u00f1a WhatsApp",
+        key="campanas_publish_social",
+    )
+
+    step3_valid = True
+    if publish_social:
+        social_caption = st.text_area(
+            "Caption del post",
+            key="campanas_social_caption",
+            height=120,
+            max_chars=2200,
+            help="Puede ser distinto al mensaje de WhatsApp",
+        )
+        social_uploaded = st.file_uploader(
+            "Imagen",
+            type=["jpg", "jpeg", "png", "webp"],
+            key="campanas_social_uploader",
+        )
+        if social_uploaded is not None:
+            st.session_state.campanas_social_image_bytes = social_uploaded.getvalue()
+            st.session_state.campanas_social_image_name = social_uploaded.name
+        if st.session_state.campanas_social_image_bytes:
+            st.image(st.session_state.campanas_social_image_bytes, width=300)
+
+        social_platforms = st.multiselect(
+            "Plataformas",
+            options=["Instagram", "Facebook"],
+            default=st.session_state.campanas_social_platforms,
+            key="campanas_social_platforms",
+        )
+        sc1, sc2 = st.columns(2)
+        with sc1:
+            social_date = st.date_input(
+                "Fecha de publicaci\u00f3n",
+                key="campanas_social_date",
+                min_value=date.today(),
+            )
+        with sc2:
+            social_time = st.time_input(
+                "Hora de publicaci\u00f3n",
+                key="campanas_social_time",
+            )
+        social_scheduled_at = combine_local_datetime(social_date, social_time)
+        step3_valid = bool(
+            social_caption.strip()
+            and st.session_state.campanas_social_image_bytes
+            and social_platforms
+            and social_scheduled_at > datetime.now(MX_TZ)
+        )
+        if not step3_valid:
+            st.caption(
+                "Completa caption, imagen, plataformas y una fecha futura para lanzar."
+            )
+
+    st.markdown("---")
+
     # Confirmation gate (WA-03)
-    st.markdown(f"Estás a punto de enviar a **{count} pacientes**. ¿Confirmar?")
+    gate_msg = f"Est\u00e1s a punto de enviar a **{count} pacientes**"
+    if st.session_state.get("campanas_publish_social"):
+        gate_msg += " y publicar en redes sociales"
+    gate_msg += ". \u00bfConfirmar?"
+    st.markdown(gate_msg)
     col1, col2 = st.columns([1, 1])
     can_confirm = bool(selected_tag_ids) and selected_template is not None and count > 0
     with col1:
         confirm = st.button(
-            "Confirmar y enviar",
+            "Lanzar campa\u00f1a",
             type="primary",
             use_container_width=True,
-            disabled=not can_confirm,
+            disabled=not can_confirm or not step3_valid,
         )
     with col2:
         reset = st.button("Cancelar", use_container_width=True)
@@ -145,34 +314,10 @@ if st.session_state.campanas_mode == "setup":
         st.rerun()
 
     if confirm:
-        # Auto-name per D-06: "{tag_name} · {dd mmm yyyy}"
-        primary_tag_name = next(
-            (t["name"] for t in tags if str(t["id"]) == str(selected_tag_ids[0])),
-            "campaña",
+        _handle_launch_campaign(
+            recipient_ids=[str(p["id"]) for p in patients],
+            recipient_count=count,
         )
-        campaign_name = f"{primary_tag_name} · {_format_date(datetime.now())}"
-
-        try:
-            row = insert_campaign(
-                campaign_name=campaign_name,
-                template_id=selected_template["id"],
-                segment_tags=[str(tid) for tid in selected_tag_ids],
-                total_recipients=count,
-            )
-            new_id = row["id"]
-            insert_campaign_recipients(new_id, [str(p["id"]) for p in patients])
-        except Exception as exc:
-            st.error("Error al guardar la campaña. Intenta de nuevo.")
-            st.caption(f"Detalle técnico: {exc}")
-            st.stop()
-
-        if not _trigger_n8n_webhook(str(new_id)):
-            st.error("Error al iniciar la campaña. Verifica que n8n esté activo e intenta de nuevo.")
-            st.stop()
-
-        st.session_state.campanas_active_campaign_id = str(new_id)
-        st.session_state.campanas_mode = "progress"
-        st.rerun()
 
 # =============================================================================
 # PROGRESS VIEW (campanas_mode == "progress")
