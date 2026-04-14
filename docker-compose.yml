@@ -44,6 +44,7 @@ services:
         condition: service_healthy
     volumes:
       - n8n_data:/home/node/.n8n
+      - uploads:/opt/clinic-crm/uploads
     environment:
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
@@ -66,6 +67,7 @@ services:
       ADMIN_WHATSAPP_NUMBER: ${ADMIN_WHATSAPP_NUMBER}
       DOMAIN: ${DOMAIN}
       ADMIN_SUBDOMAIN: ${ADMIN_SUBDOMAIN}
+      MOCK_SOCIAL: ${MOCK_SOCIAL:-true}
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
       interval: 30s
@@ -118,6 +120,7 @@ services:
         condition: service_healthy
     volumes:
       - ./admin-ui/src:/app
+      - uploads:/opt/clinic-crm/uploads
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       N8N_WEBHOOK_BASE_URL: http://n8n:5678
@@ -128,6 +131,7 @@ services:
       CLINIC_WHATSAPP_NUMBER: ${CLINIC_WHATSAPP_NUMBER}
       DOMAIN: ${DOMAIN}
       ADMIN_SUBDOMAIN: ${ADMIN_SUBDOMAIN}
+      MOCK_SOCIAL: ${MOCK_SOCIAL:-true}
     restart: unless-stopped
     networks:
       - clinic-net
@@ -145,6 +149,7 @@ services:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
+      - uploads:/srv/uploads:ro
     ports:
       - "80:80"
       - "443:443"
@@ -163,3 +168,5 @@ volumes:
   evolution_data:
   caddy_data:
   caddy_config:
+  uploads:
+    driver: local

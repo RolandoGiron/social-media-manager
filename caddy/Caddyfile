@@ -14,5 +14,14 @@
     basic_auth {
         {$ADMIN_USER:admin} {$ADMIN_PASSWORD_HASH}
     }
+
+    handle_path /uploads/* {
+        root * /srv/uploads
+        file_server
+        header Content-Disposition "inline"
+        header Cache-Control "public, max-age=31536000, immutable"
+        header X-Content-Type-Options "nosniff"
+    }
+
     reverse_proxy streamlit:8501
 }
