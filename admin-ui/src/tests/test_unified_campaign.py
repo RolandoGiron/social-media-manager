@@ -24,10 +24,22 @@ import pytest
 PAGE_PATH = Path(__file__).parent.parent / "pages" / "7_Campañas.py"
 
 
-def _make_st_mock(session_state: dict | None = None):
+class _SessionState(dict):
+    """Dict subclass that also supports attribute-style access (mirrors Streamlit's SessionState)."""
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError(key)
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+
+def _make_st_mock(session_state: "_SessionState | None" = None):
     """Return a MagicMock shaped like streamlit with a real-dict session_state."""
     st = mock.MagicMock()
-    st.session_state = session_state if session_state is not None else {}
+    st.session_state = session_state if session_state is not None else _SessionState()
     col = mock.MagicMock()
     col.__enter__ = mock.MagicMock(return_value=col)
     col.__exit__ = mock.MagicMock(return_value=False)
@@ -35,7 +47,7 @@ def _make_st_mock(session_state: dict | None = None):
     st.button.return_value = False
     st.file_uploader.return_value = None
     st.checkbox.return_value = False
-    st.multiselect.return_value = ["Instagram", "Facebook"]
+    st.multiselect.return_value = []
     st.selectbox.return_value = None
     return st
 
@@ -45,12 +57,6 @@ def _load_campanhas_module(session_state: dict, module_name: str = "pages.campan
     MX_TZ = ZoneInfo("America/Mexico_City")
 
     st_mock = _make_st_mock(session_state)
-
-    # Ensure setdefault populates our session_state dict
-    def _setdefault(key, value):
-        if key not in session_state:
-            session_state[key] = value
-    st_mock.session_state.setdefault = _setdefault
 
     # --- components.database ---
     db_mock = types.ModuleType("components.database")
@@ -106,6 +112,11 @@ def _load_campanhas_module(session_state: dict, module_name: str = "pages.campan
         original[key] = sys.modules.get(key)
         sys.modules[key] = mod
 
+    # Save values that the page-level render will overwrite (fetch_* mocks return empty).
+    _preserve_keys = ("_campanas_tags_cache", "_campanas_selected_template_cache",
+                      "campanas_selected_tag_ids")
+    _saved = {k: session_state[k] for k in _preserve_keys if k in session_state}
+
     try:
         spec = importlib.util.spec_from_file_location(module_name, str(PAGE_PATH))
         module = importlib.util.module_from_spec(spec)
@@ -116,6 +127,9 @@ def _load_campanhas_module(session_state: dict, module_name: str = "pages.campan
                 sys.modules.pop(key, None)
             else:
                 sys.modules[key] = orig
+
+    # Restore session state clobbered by page-level render so _handle_launch_campaign sees them.
+    session_state.update(_saved)
 
     return module, db_mock, sp_mock, requests_mock, st_mock
 
@@ -128,8 +142,8 @@ _FUTURE_DATE = (datetime.now(MX_TZ) + timedelta(days=1)).date()
 _FUTURE_TIME = time(12, 0)
 
 
-def _base_session(publish_social: bool = False) -> dict:
-    return {
+def _base_session(publish_social: bool = False) -> "_SessionState":
+    return _SessionState({
         "campanas_mode": "setup",
         "campanas_selected_tag_ids": ["tag-uuid-1"],
         "campanas_selected_template_id": "tpl-uuid-1",
@@ -144,7 +158,7 @@ def _base_session(publish_social: bool = False) -> dict:
         "campanas_social_time": _FUTURE_TIME,
         "_campanas_tags_cache": [{"id": "tag-uuid-1", "name": "acn\u00e9"}],
         "_campanas_selected_template_cache": {"id": "tpl-uuid-1", "name": "Promo", "body": "Hola {nombre}"},
-    }
+    })
 
 
 # ---------------------------------------------------------------------------

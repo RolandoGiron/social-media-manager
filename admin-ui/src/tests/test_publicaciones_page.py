@@ -29,8 +29,18 @@ PAGE_SOURCE = PAGE_PATH.read_text(encoding="utf-8")
 # ---------------------------------------------------------------------------
 def _make_st_mock():
     st = mock.MagicMock()
-    # session_state must behave like a dict for .setdefault()
-    session_state = {}
+    # session_state must support both dict-style (.setdefault) and attribute-style access
+    class _SessionState(dict):
+        def __getattr__(self, key):
+            try:
+                return self[key]
+            except KeyError:
+                raise AttributeError(key)
+
+        def __setattr__(self, key, value):
+            self[key] = value
+
+    session_state = _SessionState()
     st.session_state = session_state
     # st.columns must return a context-manager-capable tuple
     col = mock.MagicMock()

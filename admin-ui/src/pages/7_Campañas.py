@@ -92,6 +92,7 @@ def _handle_launch_campaign(recipient_ids: list, recipient_count: int) -> None:
     ) if selected_tag_ids else "campa\u00f1a"
     campaign_name = f"{primary_tag_name} \u00b7 {_format_date(datetime.now())}"
 
+    new_id = None
     try:
         row = insert_campaign(
             campaign_name=campaign_name,
@@ -105,6 +106,7 @@ def _handle_launch_campaign(recipient_ids: list, recipient_count: int) -> None:
         st.error("Error al guardar la campa\u00f1a. Intenta de nuevo.")
         st.caption(f"Detalle t\u00e9cnico: {exc}")
         st.stop()
+        return
 
     # Phase 6 Step 3: optionally create a social post linked to this campaign
     social_post_id = None
