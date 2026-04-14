@@ -143,7 +143,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const recipient = $('loop-recipients').item.json;\nconst statusRow = $input.item.json;\nreturn { json: { ...recipient, campaign_status: statusRow.status } };"
+        "jsCode": "const recipient = $('Loop Recipients').item.json;\nconst statusRow = $input.item.json;\nreturn { json: { ...recipient, campaign_status: statusRow.status } };"
       }
     },
     {
@@ -188,7 +188,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const item = $input.item.json;\nconst delay_ms = Math.floor(Math.random() * 5000) + 3000; // 3000-8000\n// Render template body with patient first_name as a minimal substitution\nconst body = item.template_body || '';\nconst rendered = body\n  .replace(/\\{\\{nombre\\}\\}/g, item.first_name || '')\n  .replace(/\\{\\{telefono\\}\\}/g, item.phone_normalized || '');\nreturn { json: { ...item, delay_ms, rendered_text: rendered } };"
+        "jsCode": "const item = $input.item.json;\nconst delay_ms = Math.floor(Math.random() * 5000) + 3000; // 3000-8000\nconst delay_seconds = Math.ceil(delay_ms / 1000); // 3-8 seconds\n// Render template body with patient first_name as a minimal substitution\nconst body = item.template_body || '';\nconst rendered = body\n  .replace(/\\{\\{nombre\\}\\}/g, item.first_name || '')\n  .replace(/\\{\\{telefono\\}\\}/g, item.phone_normalized || '');\nreturn { json: { ...item, delay_ms, delay_seconds, rendered_text: rendered } };"
       }
     },
     {
@@ -201,8 +201,8 @@
         300
       ],
       "parameters": {
-        "amount": "={{ $json.delay_ms }}",
-        "unit": "ms"
+        "amount": "={{ $json.delay_seconds }}",
+        "unit": "seconds"
       }
     },
     {
@@ -216,13 +216,13 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "=http://evolution-api:8080/message/sendText/{{ $env.EVOLUTION_INSTANCE_NAME }}",
+        "url": "=http://evolution-api:8080/message/sendText/clinic-main",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "apikey",
-              "value": "={{ $env.EVOLUTION_API_KEY }}"
+              "value": "Jehova01"
             },
             {
               "name": "Content-Type",
@@ -407,14 +407,14 @@
       "main": [
         [
           {
-            "node": "Check Cancelled",
+            "node": "Finalize Status",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Finalize Status",
+            "node": "Check Cancelled",
             "type": "main",
             "index": 0
           }

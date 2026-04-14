@@ -88,7 +88,7 @@
             {
               "id": "instance_name",
               "name": "instance_name",
-              "value": "={{ $json.body.instance }}",
+              "value": "clinic-main",
               "type": "string"
             },
             {
@@ -167,8 +167,10 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH patient_match AS (\n  SELECT id FROM patients\n  WHERE phone_normalized = regexp_replace('{{ $('Extract Message Fields').item.json.remote_jid }}', '[^0-9]', '', 'g')\n  LIMIT 1\n)\nINSERT INTO conversations (wa_contact_id, state, context, patient_id)\nSELECT\n  '{{ $('Extract Message Fields').item.json.remote_jid }}',\n  'awaiting_intent',\n  '{}'::jsonb,\n  (SELECT id FROM patient_match)\nRETURNING id, state, context, patient_id, wa_contact_id, NULL::text as first_name, NULL::text as last_name, NULL::text as phone_normalized",
-        "options": {}
+        "query": "WITH patient_match AS (\n  SELECT id FROM patients\n  WHERE phone_normalized = regexp_replace($1, '[^0-9]', '', 'g')\n  LIMIT 1\n)\nINSERT INTO conversations (wa_contact_id, state, context, patient_id)\nSELECT\n  $1,\n  'awaiting_intent',\n  '{}'::jsonb,\n  (SELECT id FROM patient_match)\nRETURNING id, state, context, patient_id, wa_contact_id, NULL::text as first_name, NULL::text as last_name, NULL::text as phone_normalized",
+        "options": {
+          "queryReplacement": "={{ $('Extract Message Fields').first().json.remote_jid }}"
+        }
       },
       "credentials": {
         "postgres": {
@@ -188,7 +190,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "return { json: $input.item.json };"
+        "jsCode": "const conv = $input.item.json;\nconst msg = $('Extract Message Fields').first().json;\nreturn { json: { ...conv, message_text: msg.message_text, wa_message_id: msg.wa_message_id } };"
       }
     },
     {
@@ -202,7 +204,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO messages (conversation_id, direction, sender, content, wa_message_id)\nVALUES (\n  '{{ $json.id }}'::uuid,\n  'inbound',\n  'patient',\n  '{{ $('Extract Message Fields').item.json.message_text.replace(/'/g, \"''\") }}',\n  '{{ $('Extract Message Fields').item.json.wa_message_id }}'\n) RETURNING id",
+        "query": "INSERT INTO messages (conversation_id, direction, sender, content, wa_message_id)\nVALUES (\n  '{{ $json.id }}'::uuid,\n  'inbound',\n  'patient',\n  '{{ $json.message_text.replace(/'/g, \"''\") }}',\n  '{{ $json.wa_message_id }}'\n) RETURNING id",
         "options": {}
       },
       "credentials": {
@@ -230,7 +232,7 @@
           "conditions": [
             {
               "id": "check-state",
-              "leftValue": "={{ $('Merge Conversation Data').item.json.state }}",
+              "leftValue": "={{ $('Merge Conversation Data').first().json.state }}",
               "rightValue": "human_handoff",
               "operator": {
                 "type": "string",
@@ -261,7 +263,7 @@
           "conditions": [
             {
               "id": "check-booking-state",
-              "leftValue": "={{ $('Merge Conversation Data').item.json.state }}",
+              "leftValue": "={{ $('Merge Conversation Data').first().json.state }}",
               "rightValue": "booking_flow",
               "operator": {
                 "type": "string",
@@ -329,14 +331,14 @@
           ],
           "mappingMode": "defineBelow",
           "value": {
-            "message_text": "={{ $('Extract Message Fields').item.json.message_text }}",
-            "booking_context": "={{ $('Merge Conversation Data').item.json.context || {} }}",
-            "patient_id": "={{ $('Merge Conversation Data').item.json.patient_id || '' }}",
-            "patient_name": "={{ ($('Merge Conversation Data').item.json.first_name ? $('Merge Conversation Data').item.json.first_name + ' ' + ($('Merge Conversation Data').item.json.last_name || '') : $('Extract Message Fields').item.json.push_name) }}",
-            "wa_contact_id": "={{ $('Merge Conversation Data').item.json.wa_contact_id }}",
-            "remote_jid": "={{ $('Extract Message Fields').item.json.remote_jid }}",
-            "instance_name": "={{ $('Extract Message Fields').item.json.instance_name }}",
-            "api_key": "={{ $('Extract Message Fields').item.json.api_key }}"
+            "message_text": "={{ $('Extract Message Fields').first().json.message_text }}",
+            "booking_context": "={{ $('Merge Conversation Data').first().json.context || {} }}",
+            "patient_id": "={{ $('Merge Conversation Data').first().json.patient_id || '' }}",
+            "patient_name": "={{ ($('Merge Conversation Data').first().json.first_name ? $('Merge Conversation Data').first().json.first_name + ' ' + ($('Merge Conversation Data').first().json.last_name || '') : $('Extract Message Fields').first().json.push_name) }}",
+            "wa_contact_id": "={{ $('Merge Conversation Data').first().json.wa_contact_id }}",
+            "remote_jid": "={{ $('Extract Message Fields').first().json.remote_jid }}",
+            "instance_name": "={{ $('Extract Message Fields').first().json.instance_name }}",
+            "api_key": "={{ $('Extract Message Fields').first().json.api_key }}"
           }
         }
       }
@@ -601,14 +603,14 @@
           ],
           "mappingMode": "defineBelow",
           "value": {
-            "message_text": "={{ $('Extract Message Fields').item.json.message_text }}",
+            "message_text": "={{ $('Extract Message Fields').first().json.message_text }}",
             "booking_context": "={{ { booking_step: 'awaiting_service_type' } }}",
-            "patient_id": "={{ $('Merge Conversation Data').item.json.patient_id || '' }}",
-            "patient_name": "={{ ($('Merge Conversation Data').item.json.first_name ? $('Merge Conversation Data').item.json.first_name + ' ' + ($('Merge Conversation Data').item.json.last_name || '') : $('Extract Message Fields').item.json.push_name) }}",
-            "wa_contact_id": "={{ $('Merge Conversation Data').item.json.wa_contact_id }}",
-            "remote_jid": "={{ $('Extract Message Fields').item.json.remote_jid }}",
-            "instance_name": "={{ $('Extract Message Fields').item.json.instance_name }}",
-            "api_key": "={{ $('Extract Message Fields').item.json.api_key }}"
+            "patient_id": "={{ $('Merge Conversation Data').first().json.patient_id || '' }}",
+            "patient_name": "={{ ($('Merge Conversation Data').first().json.first_name ? $('Merge Conversation Data').first().json.first_name + ' ' + ($('Merge Conversation Data').first().json.last_name || '') : $('Extract Message Fields').first().json.push_name) }}",
+            "wa_contact_id": "={{ $('Merge Conversation Data').first().json.wa_contact_id }}",
+            "remote_jid": "={{ $('Extract Message Fields').first().json.remote_jid }}",
+            "instance_name": "={{ $('Extract Message Fields').first().json.instance_name }}",
+            "api_key": "={{ $('Extract Message Fields').first().json.api_key }}"
           }
         }
       }
@@ -748,7 +750,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE conversations\nSET state = '{{ $json.new_state }}',\n    context = '{{ $json.new_context }}'::jsonb,\n    last_message_at = now()\nWHERE id = '{{ $json.conversation_id }}'::uuid\nRETURNING id, state",
+        "query": "UPDATE conversations\nSET state = '{{ $json.new_state }}',\n    context = '{{ $json.new_context }}'::jsonb,\n    last_message_at = now()\nWHERE id = '{{ $json.conversation_id }}'::uuid\nRETURNING id as conversation_id, state, '{{ $json.response_text.replace(/'/g, \"''\") }}'::text as response_text",
         "options": {}
       },
       "credentials": {
@@ -769,7 +771,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO messages (conversation_id, direction, sender, content)\nVALUES (\n  '{{ $('Merge All Response Paths').item.json.conversation_id }}'::uuid,\n  'outbound',\n  'bot',\n  '{{ $('Merge All Response Paths').item.json.response_text.replace(/'/g, \"''\") }}'\n) RETURNING id",
+        "query": "INSERT INTO messages (conversation_id, direction, sender, content)\nVALUES (\n  '{{ $json.conversation_id }}'::uuid,\n  'outbound',\n  'bot',\n  '{{ $json.response_text.replace(/'/g, \"''\") }}'\n) RETURNING id",
         "options": {}
       },
       "credentials": {
@@ -780,12 +782,26 @@
       }
     },
     {
+      "id": "debug-prepare-send-params",
+      "name": "DEBUG - Prepare Send Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5040,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// DEBUG NODE: Makes send params visible in execution log.\n// Reads from Merge All Response Paths (the node that has remote_jid, response_text, etc.)\n// before Postgres nodes stripped them out.\nconst mergeData = $('Merge All Response Paths').first().json;\n\nconst remote_jid = mergeData.remote_jid || '';\nconst response_text = mergeData.response_text || '';\nconst instance_name = mergeData.instance_name || '';\nconst api_key = mergeData.api_key || '';\n\n// If any param is empty, log it clearly so you can see in execution log\nif (!remote_jid) console.error('DEBUG ERROR: remote_jid is empty!');\nif (!response_text) console.error('DEBUG ERROR: response_text is empty!');\nif (!instance_name) console.error('DEBUG ERROR: instance_name is empty!');\nif (!api_key) console.error('DEBUG ERROR: api_key is empty!');\n\nconsole.log('DEBUG send params:', JSON.stringify({ remote_jid, response_text: response_text.substring(0, 50), instance_name }));\n\nreturn { json: { remote_jid, response_text, instance_name, api_key } };"
+      }
+    },
+    {
       "id": "send-wa-message",
       "name": "Send WA Message",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        5040,
+        5280,
         300
       ],
       "parameters": {
@@ -818,10 +834,10 @@
           ],
           "mappingMode": "defineBelow",
           "value": {
-            "remote_jid": "={{ $('Merge All Response Paths').item.json.remote_jid }}",
-            "response_text": "={{ $('Merge All Response Paths').item.json.response_text }}",
-            "instance_name": "={{ $('Merge All Response Paths').item.json.instance_name }}",
-            "api_key": "={{ $('Merge All Response Paths').item.json.api_key }}"
+            "remote_jid": "={{ $json.remote_jid }}",
+            "response_text": "={{ $json.response_text }}",
+            "instance_name": "={{ $json.instance_name }}",
+            "api_key": "={{ $json.api_key }}"
           }
         }
       }
@@ -1154,6 +1170,17 @@
       ]
     },
     "Insert Bot Response Message": {
+      "main": [
+        [
+          {
+            "node": "DEBUG - Prepare Send Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DEBUG - Prepare Send Params": {
       "main": [
         [
           {

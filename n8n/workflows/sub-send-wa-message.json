@@ -10,20 +10,20 @@
       "parameters": {}
     },
     {
-      "id": "send-typing-indicator",
-      "name": "Send Typing Indicator",
+      "id": "send-text-message",
+      "name": "Send Text Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [480, 300],
       "parameters": {
         "method": "POST",
-        "url": "=http://evolution-api:8080/chat/sendPresence/{{ $json.instance_name }}",
+        "url": "=http://evolution-api:8080/message/sendText/clinic-main",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "apikey",
-              "value": "={{ $json.api_key }}"
+              "value": "Jehova01"
             },
             {
               "name": "Content-Type",
@@ -32,76 +32,25 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ number: $json.remote_jid, delay: 3000, presence: 'composing' }) }}",
-        "options": {}
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "id": "wait-for-typing",
-      "name": "Wait 2 Seconds",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [720, 300],
-      "parameters": {
-        "unit": "seconds",
-        "amount": 2
-      }
-    },
-    {
-      "id": "send-text-message",
-      "name": "Send Text Message",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [960, 300],
-      "parameters": {
-        "method": "POST",
-        "url": "=http://evolution-api:8080/message/sendText/{{ $('Execute Workflow Trigger').item.json.instance_name }}",
-        "sendHeaders": true,
-        "headerParameters": {
+        "specifyBody": "keypair",
+        "bodyParameters": {
           "parameters": [
             {
-              "name": "apikey",
-              "value": "={{ $('Execute Workflow Trigger').item.json.api_key }}"
+              "name": "number",
+              "value": "={{ $json.remote_jid }}"
             },
             {
-              "name": "Content-Type",
-              "value": "application/json"
+              "name": "text",
+              "value": "={{ $json.response_text || '[sin respuesta]' }}"
             }
           ]
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ number: $('Execute Workflow Trigger').item.json.remote_jid, text: $('Execute Workflow Trigger').item.json.response_text }) }}",
         "options": {}
       }
     }
   ],
   "connections": {
     "Execute Workflow Trigger": {
-      "main": [
-        [
-          {
-            "node": "Send Typing Indicator",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Send Typing Indicator": {
-      "main": [
-        [
-          {
-            "node": "Wait 2 Seconds",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Wait 2 Seconds": {
       "main": [
         [
           {
