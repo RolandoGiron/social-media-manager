@@ -308,3 +308,142 @@ class TestTemplateOperations:
         sql = mock_cursor.execute.call_args[0][0]
         assert "DELETE FROM message_templates" in sql
         mock_conn.commit.assert_called_once()
+
+
+# =============================================================================
+# Social posts (Phase 6 — SOCIAL-01, SOCIAL-03)
+# =============================================================================
+
+class TestInsertSocialPost:
+    """insert_social_post inserts with status='scheduled' and returns a row dict."""
+
+    @mock.patch("components.database.get_connection")
+    def test_insert_social_post_executes_insert_with_status_scheduled(self, mock_get_conn):
+        from components.database import insert_social_post
+        from datetime import datetime, timezone
+
+        mock_conn = mock.MagicMock()
+        mock_get_conn.return_value = mock_conn
+        mock_cursor = mock.MagicMock()
+        mock_conn.cursor.return_value.__enter__ = mock.MagicMock(return_value=mock_cursor)
+        mock_conn.cursor.return_value.__exit__ = mock.MagicMock(return_value=False)
+
+        scheduled = datetime(2026, 5, 1, 10, 0, tzinfo=timezone.utc)
+        mock_cursor.fetchone.return_value = {
+            "id": "row-id",
+            "caption": "Promo verano",
+            "image_url": "uploads/abc.jpg",
+            "platforms": ["instagram"],
+            "scheduled_at": scheduled,
+            "status": "scheduled",
+            "campaign_id": None,
+        }
+
+        result = insert_social_post(
+            caption="Promo verano",
+            image_url="uploads/abc.jpg",
+            platforms=["instagram"],
+            scheduled_at=scheduled,
+        )
+
+        sql = mock_cursor.execute.call_args[0][0]
+        assert "INSERT INTO social_posts" in sql
+        assert "'scheduled'" in sql
+        assert "RETURNING" in sql
+        assert result["status"] == "scheduled"
+        assert "id" in result
+        mock_conn.commit.assert_called_once()
+
+    @mock.patch("components.database.get_connection")
+    def test_insert_social_post_passes_campaign_id_when_provided(self, mock_get_conn):
+        from components.database import insert_social_post
+        from datetime import datetime, timezone
+
+        mock_conn = mock.MagicMock()
+        mock_get_conn.return_value = mock_conn
+        mock_cursor = mock.MagicMock()
+        mock_conn.cursor.return_value.__enter__ = mock.MagicMock(return_value=mock_cursor)
+        mock_conn.cursor.return_value.__exit__ = mock.MagicMock(return_value=False)
+
+        scheduled = datetime(2026, 5, 1, 10, 0, tzinfo=timezone.utc)
+        campaign_id = str(uuid.uuid4())
+        mock_cursor.fetchone.return_value = {
+            "id": "row-id",
+            "caption": "Promo",
+            "image_url": "uploads/x.jpg",
+            "platforms": ["facebook"],
+            "scheduled_at": scheduled,
+            "status": "scheduled",
+            "campaign_id": campaign_id,
+        }
+
+        insert_social_post(
+            caption="Promo",
+            image_url="uploads/x.jpg",
+            platforms=["facebook"],
+            scheduled_at=scheduled,
+            campaign_id=campaign_id,
+        )
+
+        params = mock_cursor.execute.call_args[0][1]
+        assert campaign_id in params
+
+
+class TestFetchSocialPosts:
+    """fetch_social_posts orders by scheduled_at ASC NULLS LAST."""
+
+    @mock.patch("components.database.get_connection")
+    def test_fetch_social_posts_orders_by_scheduled_at_asc_nulls_last(self, mock_get_conn):
+        from components.database import fetch_social_posts
+
+        mock_conn = mock.MagicMock()
+        mock_get_conn.return_value = mock_conn
+        mock_cursor = mock.MagicMock()
+        mock_conn.cursor.return_value.__enter__ = mock.MagicMock(return_value=mock_cursor)
+        mock_conn.cursor.return_value.__exit__ = mock.MagicMock(return_value=False)
+        mock_cursor.fetchall.return_value = []
+
+        fetch_social_posts()
+
+        sql = mock_cursor.execute.call_args[0][0]
+        assert "ORDER BY scheduled_at ASC NULLS LAST" in sql
+
+
+class TestFetchSocialPostById:
+    """fetch_social_post_by_id returns dict or None."""
+
+    @mock.patch("components.database.get_connection")
+    def test_fetch_social_post_by_id_returns_none_when_missing(self, mock_get_conn):
+        from components.database import fetch_social_post_by_id
+
+        mock_conn = mock.MagicMock()
+        mock_get_conn.return_value = mock_conn
+        mock_cursor = mock.MagicMock()
+        mock_conn.cursor.return_value.__enter__ = mock.MagicMock(return_value=mock_cursor)
+        mock_conn.cursor.return_value.__exit__ = mock.MagicMock(return_value=False)
+        mock_cursor.fetchone.return_value = None
+
+        result = fetch_social_post_by_id(str(uuid.uuid4()))
+        assert result is None
+
+
+class TestDeleteSocialPost:
+    """delete_social_post only removes draft/scheduled rows."""
+
+    @mock.patch("components.database.get_connection")
+    def test_delete_social_post_only_deletes_pending(self, mock_get_conn):
+        from components.database import delete_social_post
+
+        mock_conn = mock.MagicMock()
+        mock_get_conn.return_value = mock_conn
+        mock_cursor = mock.MagicMock()
+        mock_conn.cursor.return_value.__enter__ = mock.MagicMock(return_value=mock_cursor)
+        mock_conn.cursor.return_value.__exit__ = mock.MagicMock(return_value=False)
+        mock_cursor.rowcount = 1
+
+        result = delete_social_post(str(uuid.uuid4()))
+
+        sql = mock_cursor.execute.call_args[0][0]
+        assert "status IN ('draft', 'scheduled')" in sql
+        assert result == 1
+        mock_conn.commit.assert_called_once()

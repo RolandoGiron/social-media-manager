@@ -689,3 +689,104 @@ def fetch_campaign_history(limit: int = 50) -> list[dict]:
             return cur.fetchall()
     finally:
         conn.close()
+
+
+# =============================================================================
+# Social posts (Phase 6 — SOCIAL-01, SOCIAL-03)
+# =============================================================================
+
+def insert_social_post(
+    caption: str,
+    image_url: str,
+    platforms: list[str],
+    scheduled_at,  # tz-aware datetime
+    campaign_id: str | None = None,
+) -> dict:
+    """Insert a scheduled social post. Returns the inserted row.
+
+    Schema reference: postgres/init/001_schema.sql social_posts table.
+    Status starts as 'scheduled' so the n8n dispatcher (Plan 02) picks it up.
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                INSERT INTO social_posts
+                    (caption, image_url, platforms, scheduled_at, status, campaign_id)
+                VALUES (%s, %s, %s, %s, 'scheduled', %s)
+                RETURNING id, caption, image_url, platforms, scheduled_at, status, campaign_id
+                """,
+                (caption, image_url, platforms, scheduled_at, campaign_id),
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return dict(row)
+    finally:
+        conn.close()
+
+
+def fetch_social_posts(limit: int = 100) -> list[dict]:
+    """Return scheduled posts ordered by scheduled_at ASC NULLS LAST.
+
+    Used by 8_Publicaciones.py to render the list section (D-09).
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, caption, image_url, platforms, scheduled_at,
+                       published_at, status, error_message, campaign_id, created_at
+                FROM social_posts
+                ORDER BY scheduled_at ASC NULLS LAST, created_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def fetch_social_post_by_id(post_id: str) -> dict | None:
+    """Fetch a single social post by ID. Returns dict or None."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, caption, image_url, platforms, scheduled_at,
+                       published_at, status, error_message, campaign_id
+                FROM social_posts
+                WHERE id = %s::uuid
+                """,
+                (post_id,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def delete_social_post(post_id: str) -> int:
+    """Delete a pending social_post. Refuses to touch published/publishing/failed rows.
+
+    Returns the number of rows removed (0 or 1).
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM social_posts
+                WHERE id = %s::uuid
+                  AND status IN ('draft', 'scheduled')
+                """,
+                (post_id,),
+            )
+            deleted = cur.rowcount
+            conn.commit()
+            return deleted
+    finally:
+        conn.close()
