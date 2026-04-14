@@ -87,7 +87,7 @@ Accent reserved for:
 Destructive reserved for:
 - `st.error()` row when a `scheduled_posts.status = 'error'` appears in the list, with `error_message` displayed
 - `st.error()` callout if image upload fails or file size exceeds limit
-- "Eliminar publicación" action (only on `pending` posts) — rendered as `st.button("Eliminar", type="secondary")` followed by inline `st.warning` (no modal — Streamlit limitation, see Copywriting Contract)
+- "Eliminar publicación" action (only on `pending` posts) — rendered as `st.button("Eliminar publicación", type="secondary")` followed by inline `st.warning` (no modal — Streamlit limitation, see Copywriting Contract)
 
 Status color mapping in publication list (text only, no colored badges):
 - `pending` → neutral text "Pendiente"
@@ -130,6 +130,9 @@ st.markdown("---")
     Columns: Caption (truncado 60 chars) | Plataformas | Fecha programada | Estado | Acciones
     Order: scheduled_at ASC (próximas primero, per D-09)
 
+  [for each row with status == "pending":]
+    [st.button("Eliminar publicación", type="secondary", key=f"del_{post_id}")]
+
   [for each row with status == "error":]
     [st.error(f"Error en '{caption_truncated}': {error_message}")]
 ```
@@ -162,7 +165,7 @@ st.markdown("---")
 [Confirmation gate — existing copy from Phase 5]
 [st.markdown: "Estás a punto de enviar a **N pacientes**" + (if checkbox: " y publicar en redes sociales") + ". ¿Confirmar?"]
 [col1: st.button("Lanzar campaña", type="primary", use_container_width=True)]
-[col2: st.button("Cancelar", use_container_width=True)]
+[col2: st.button("Cancelar envío", use_container_width=True)]
 ```
 
 **Step 3 disabled state:** "Lanzar campaña" button disabled when checkbox is active AND (caption empty OR no image OR no platform OR datetime invalid). When checkbox is OFF, the existing Phase 5 disabled rules apply unchanged.
@@ -208,7 +211,8 @@ st.markdown("---")
 | "Programar publicación" (8_Publicaciones.py) | always | caption empty OR no image OR no platform OR scheduled_at <= now |
 | "Lanzar campaña" (7_Campañas.py) — checkbox OFF | setup mode | Phase 5 rules (no segment / no template / count = 0) |
 | "Lanzar campaña" (7_Campañas.py) — checkbox ON | setup mode | Phase 5 rules OR (caption empty / no image / no platform / scheduled_at <= now) |
-| "Eliminar" (per row in list) | only when row.status = "pending" | never disabled |
+| "Cancelar envío" (7_Campañas.py) | setup mode | never disabled — always allows backing out before launch |
+| "Eliminar publicación" (per row in list) | only when row.status = "pending" | never disabled |
 
 ### Error States
 
@@ -242,6 +246,7 @@ st.markdown("---")
 | Time field label | "Hora de publicación" |
 | Primary CTA (8_Publicaciones.py) | "Programar publicación" |
 | Primary CTA (7_Campañas.py) | "Lanzar campaña" |
+| Secondary CTA (7_Campañas.py confirmation gate) | "Cancelar envío" |
 | Confirmation gate (Step 3 inactive) | "Estás a punto de enviar a **N pacientes**. ¿Confirmar?" |
 | Confirmation gate (Step 3 active) | "Estás a punto de enviar a **N pacientes** y publicar en redes sociales. ¿Confirmar?" |
 | Success: post scheduled | "Publicación programada para {fecha} a las {hora}." |
@@ -257,7 +262,7 @@ st.markdown("---")
 | Error: DB fail | "Error al guardar la publicación. Intenta de nuevo." |
 | Error: row error inline | "Error en '{caption_truncated}': {error_message}" |
 | Mock mode banner | "Modo prueba activo (MOCK_SOCIAL=true). Las publicaciones se simulan sin llamar a Meta API." |
-| Destructive: delete pending post | "Eliminar publicación: este post será removido de la cola y no se publicará." Inline `st.warning` + `st.button("Eliminar", type="secondary")` — single click commits (no modal, Streamlit limitation). |
+| Destructive: delete pending post | "Eliminar publicación: este post será removido de la cola y no se publicará." Inline `st.warning` + `st.button("Eliminar publicación", type="secondary")` — single click commits (no modal, Streamlit limitation). |
 
 **Language:** All UI copy in Spanish. No English strings except literal product names (Instagram, Facebook, WhatsApp).
 
