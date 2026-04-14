@@ -11,11 +11,19 @@ def normalize_sv_phone(raw: str) -> tuple[str, str | None]:
 
     El Salvador format: +503 followed by 8 digits.
     """
-    if not raw or not raw.strip():
+    if not raw or not raw.strip() or raw.strip().lower() == "nan":
         return "", "Numero invalido: (vacio)"
 
+    # Handle pandas float conversion: "77546650.0" -> "77546650"
+    # When pandas reads a numeric column with any missing value, it converts
+    # all values to float64, adding a spurious ".0" suffix.
+    cleaned = raw.strip()
+    match = re.fullmatch(r"(\d+)\.0+", cleaned)
+    if match:
+        cleaned = match.group(1)
+
     # Strip all non-digit characters
-    digits = re.sub(r"\D", "", raw)
+    digits = re.sub(r"\D", "", cleaned)
 
     # Remove country code if present (503XXXXXXXX)
     if digits.startswith("503") and len(digits) == 11:
