@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "Phone normalization produces all Error on CSV import for El Salvador numbers"
 created: 2026-04-01T00:00:00Z
 updated: 2026-04-07T00:00:00Z
