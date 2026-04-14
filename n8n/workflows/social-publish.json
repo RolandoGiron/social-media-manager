@@ -1,0 +1,817 @@
+{
+  "name": "social-publish",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "social-media"
+    },
+    {
+      "name": "phase-6"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "sticky-note-info",
+      "name": "Phase 6 Info",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -200
+      ],
+      "parameters": {
+        "content": "Phase 6 — social-publish workflow\nImports required: this JSON must be imported into the running n8n instance after commit.\nEnv vars required: MOCK_SOCIAL, ADMIN_DOMAIN, META_PAGE_ACCESS_TOKEN, META_IG_USER_ID, META_FB_PAGE_ID\nWhile MOCK_SOCIAL=true, the Mock Publish Call HTTP node posts to /webhook/mock-social-log\n(same n8n instance) which logs and returns {success:true,mock:true}. No Meta API creds needed.\nSchema: social_posts table (postgres/init/001_schema.sql lines 174-192)\nPin Meta Graph API to v21.0 — do NOT use /v{latest}/.\nStatus enum: scheduled → publishing → published OR failed",
+        "height": 200,
+        "width": 700
+      }
+    },
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Webhook social-publish",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "social-publish-webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "social-publish",
+        "responseMode": "onReceived",
+        "responseCode": 200,
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Schedule social-scheduler",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        250,
+        500
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "Claim Pending Rows",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        500,
+        500
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE social_posts\nSET status = 'publishing', updated_at = now()\nWHERE id IN (\n    SELECT id FROM social_posts\n    WHERE status = 'scheduled' AND scheduled_at <= now()\n    ORDER BY scheduled_at ASC\n    LIMIT 20\n    FOR UPDATE SKIP LOCKED\n)\nRETURNING id, caption, image_url, platforms, campaign_id;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "name": "Load Single Post",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE social_posts\nSET status = 'publishing', updated_at = now()\nWHERE id = '{{ $json.body.post_id }}'::uuid\n  AND status IN ('scheduled', 'draft')\nRETURNING id, caption, image_url, platforms, campaign_id;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0005-0005-0005-000000000005",
+      "name": "Merge Entry Paths",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        750,
+        400
+      ],
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0006-0006-0006-000000000006",
+      "name": "Build Public URL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1000,
+        400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "public_image_url",
+              "name": "public_image_url",
+              "value": "=https://{{ $env.ADMIN_DOMAIN }}/{{ $json.image_url }}",
+              "type": "string"
+            },
+            {
+              "id": "id_passthrough",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "caption_passthrough",
+              "name": "caption",
+              "value": "={{ $json.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "platforms_passthrough",
+              "name": "platforms",
+              "value": "={{ $json.platforms }}",
+              "type": "array"
+            },
+            {
+              "id": "image_url_passthrough",
+              "name": "image_url",
+              "value": "={{ $json.image_url }}",
+              "type": "string"
+            },
+            {
+              "id": "campaign_id_passthrough",
+              "name": "campaign_id",
+              "value": "={{ $json.campaign_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "keepOnlySet": false
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0007-0007-0007-000000000007",
+      "name": "Mock Mode?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-mock-social",
+              "leftValue": "={{ $env.MOCK_SOCIAL }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0008-0008-0008-000000000008",
+      "name": "Mock Publish Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1500,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://n8n:5678/webhook/mock-social-log",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"post_id\": \"{{ $json.id }}\",\n  \"caption\": \"{{ $json.caption }}\",\n  \"platforms\": {{ JSON.stringify($json.platforms) }},\n  \"public_image_url\": \"{{ $json.public_image_url }}\"\n}",
+        "options": {
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "id": "a1b2c3d4-0009-0009-0009-000000000009",
+      "name": "Mock Publish Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1750,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "mock_platform_post_ids",
+              "name": "platform_post_ids",
+              "value": "={\"instagram\":\"MOCK_IG\",\"facebook\":\"MOCK_FB\"}",
+              "type": "object"
+            },
+            {
+              "id": "mock_flag",
+              "name": "mock",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "mock_id",
+              "name": "id",
+              "value": "={{ $('Build Public URL').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "keepOnlySet": false
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0010-0010-0010-000000000010",
+      "name": "Has Instagram?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-has-instagram",
+              "leftValue": "={{ $json.platforms }}",
+              "rightValue": "Instagram",
+              "operator": {
+                "type": "array",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0011-0011-0011-000000000011",
+      "name": "IG Create Container",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1750,
+        500
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $env.META_IG_USER_ID }}/media",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "={{ $json.public_image_url }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $json.caption }}"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $env.META_PAGE_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "id": "a1b2c3d4-0012-0012-0012-000000000012",
+      "name": "Wait 3s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        500
+      ],
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0013-0013-0013-000000000013",
+      "name": "IG Publish Container",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2250,
+        500
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $env.META_IG_USER_ID }}/media_publish",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "creation_id",
+              "value": "={{ $node[\"IG Create Container\"].json.id }}"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $env.META_PAGE_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "continueOnFail": false
+    },
+    {
+      "id": "a1b2c3d4-0014-0014-0014-000000000014",
+      "name": "Has Facebook?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2500,
+        500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-has-facebook",
+              "leftValue": "={{ $('Build Public URL').item.json.platforms }}",
+              "rightValue": "Facebook",
+              "operator": {
+                "type": "array",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0015-0015-0015-000000000015",
+      "name": "FB Publish Photo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2750,
+        450
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $env.META_FB_PAGE_ID }}/photos",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $('Build Public URL').item.json.public_image_url }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('Build Public URL').item.json.caption }}"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $env.META_PAGE_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "id": "a1b2c3d4-0016-0016-0016-000000000016",
+      "name": "Real Publish Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3000,
+        500
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "real_platform_post_ids",
+              "name": "platform_post_ids",
+              "value": "={\n  \"instagram\": \"{{ $('IG Publish Container').item.json.id || '' }}\",\n  \"facebook\": \"{{ $('FB Publish Photo').item.json.id || '' }}\"\n}",
+              "type": "object"
+            },
+            {
+              "id": "real_id",
+              "name": "id",
+              "value": "={{ $('Build Public URL').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "keepOnlySet": false
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0017-0017-0017-000000000017",
+      "name": "Merge Publish Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        3250,
+        400
+      ],
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0018-0018-0018-000000000018",
+      "name": "Mark Published",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3500,
+        400
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE social_posts\nSET status = 'published',\n    published_at = now(),\n    platform_post_ids = '{{ JSON.stringify($json.platform_post_ids) }}'::jsonb,\n    updated_at = now()\nWHERE id = '{{ $json.id }}'::uuid;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0019-0019-0019-000000000019",
+      "name": "Mark Failed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3500,
+        600
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE social_posts\nSET status = 'failed',\n    error_message = '{{ ($json.error && $json.error.message) || \"unknown error\" }}',\n    updated_at = now()\nWHERE id = '{{ $json.id }}'::uuid;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0020-0020-0020-000000000020",
+      "name": "Webhook mock-social-log",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        250,
+        700
+      ],
+      "webhookId": "mock-social-log-webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mock-social-log",
+        "responseMode": "lastNode",
+        "responseCode": 200,
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0021-0021-0021-000000000021",
+      "name": "Mock Log Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        700
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "mock_success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "mock_true",
+              "name": "mock",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {
+          "keepOnlySet": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook social-publish": {
+      "main": [
+        [
+          {
+            "node": "Load Single Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule social-scheduler": {
+      "main": [
+        [
+          {
+            "node": "Claim Pending Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Pending Rows": {
+      "main": [
+        [
+          {
+            "node": "Merge Entry Paths",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Load Single Post": {
+      "main": [
+        [
+          {
+            "node": "Merge Entry Paths",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Entry Paths": {
+      "main": [
+        [
+          {
+            "node": "Build Public URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Public URL": {
+      "main": [
+        [
+          {
+            "node": "Mock Mode?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Mode?": {
+      "main": [
+        [
+          {
+            "node": "Mock Publish Call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Instagram?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Publish Call": {
+      "main": [
+        [
+          {
+            "node": "Mock Publish Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Publish Result": {
+      "main": [
+        [
+          {
+            "node": "Merge Publish Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Instagram?": {
+      "main": [
+        [
+          {
+            "node": "IG Create Container",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Facebook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG Create Container": {
+      "main": [
+        [
+          {
+            "node": "Wait 3s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 3s": {
+      "main": [
+        [
+          {
+            "node": "IG Publish Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG Publish Container": {
+      "main": [
+        [
+          {
+            "node": "Has Facebook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Facebook?": {
+      "main": [
+        [
+          {
+            "node": "FB Publish Photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Real Publish Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB Publish Photo": {
+      "main": [
+        [
+          {
+            "node": "Real Publish Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Real Publish Result": {
+      "main": [
+        [
+          {
+            "node": "Merge Publish Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Publish Results": {
+      "main": [
+        [
+          {
+            "node": "Mark Published",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook mock-social-log": {
+      "main": [
+        [
+          {
+            "node": "Mock Log Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
