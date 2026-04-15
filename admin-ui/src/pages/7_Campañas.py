@@ -10,6 +10,7 @@ import streamlit as st
 
 from components.database import (
     cancel_campaign,
+    fetch_campaign_delivery_analytics,  # Phase 7 DASH-02
     fetch_campaign_history,
     fetch_campaign_status,
     fetch_patients_by_tags,
@@ -429,3 +430,58 @@ else:
         for h in history
     ])
     st.dataframe(df, use_container_width=True, hide_index=True)
+
+# =============================================================================
+# CAMPAIGN DELIVERY ANALYTICS  (Phase 7 — DASH-02, D-12 to D-15)
+# =============================================================================
+st.markdown("---")
+st.subheader("Análisis de entrega por campaña")
+st.caption("Últimas 10 campañas de los últimos 30 días")
+
+try:
+    analytics = fetch_campaign_delivery_analytics(days=30, limit=10)
+except Exception as exc:
+    analytics = []
+    st.error(f"Error cargando análisis de entrega: {exc}")
+
+if not analytics:
+    st.info("Sin campañas completadas en los últimos 30 días.")
+else:
+    for camp in analytics:
+        total = camp["total_recipients"] or 1  # zero-division guard
+        sent = camp["sent"] or 0
+        delivered = camp["delivered"] or 0
+        read_count = camp["read"] or 0
+        failed = camp["failed"] or 0
+
+        sent_pct = sent / total
+        delivered_pct = delivered / total
+        read_pct = read_count / total
+
+        date_str = (
+            camp["created_at"].strftime("%d/%m/%Y")
+            if camp["created_at"] else "—"
+        )
+
+        with st.container():
+            col_title, col_date = st.columns([3, 1])
+            with col_title:
+                st.markdown(f"**{camp['campaign_name']}**")
+                st.caption(f"Segmento: {camp['segment_tag_names']}")
+            with col_date:
+                st.caption(date_str)
+
+            # Funnel bars
+            st.markdown(f"Enviado — {sent}/{camp['total_recipients']}")
+            st.progress(min(sent_pct, 1.0))
+
+            st.markdown(f"Entregado — {delivered}/{camp['total_recipients']}")
+            st.progress(min(delivered_pct, 1.0))
+
+            st.markdown(f"Leído — {read_count}/{camp['total_recipients']}")
+            st.progress(min(read_pct, 1.0))
+
+            if failed > 0:
+                st.caption(f"⚠ {failed} fallido(s)")
+
+            st.markdown("&nbsp;", unsafe_allow_html=True)  # spacing between cards
