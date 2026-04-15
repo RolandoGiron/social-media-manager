@@ -790,3 +790,141 @@ def delete_social_post(post_id: str) -> int:
             return deleted
     finally:
         conn.close()
+
+
+# =============================================================================
+# Dashboard (Phase 7 — DASH-01, DASH-03)
+# =============================================================================
+
+def fetch_dashboard_kpis(days: int = 30) -> dict:
+    """Return 4 KPI values for the dashboard (last N days).
+
+    Keys: messages_sent (int), bot_resolution_pct (float 0-100),
+          appointments_booked (int), posts_published (int).
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Messages sent (outbound only)
+            cur.execute(
+                """
+                SELECT COUNT(*) AS cnt FROM messages
+                WHERE direction = 'outbound'
+                  AND created_at >= now() - interval '1 day' * %s
+                """,
+                (days,),
+            )
+            messages_sent = cur.fetchone()["cnt"]
+
+            # Bot resolution %
+            cur.execute(
+                """
+                SELECT
+                    COUNT(*) FILTER (WHERE human_handoff = false) AS bot_resolved,
+                    COUNT(*) AS total
+                FROM conversations
+                WHERE created_at >= now() - interval '1 day' * %s
+                """,
+                (days,),
+            )
+            row = cur.fetchone()
+            total_convs = row["total"] or 0
+            bot_resolved = row["bot_resolved"] or 0
+            bot_resolution_pct = (bot_resolved / total_convs * 100) if total_convs > 0 else 0.0
+
+            # Appointments booked
+            cur.execute(
+                """
+                SELECT COUNT(*) AS cnt FROM appointments
+                WHERE status = 'confirmed'
+                  AND created_at >= now() - interval '1 day' * %s
+                """,
+                (days,),
+            )
+            appointments_booked = cur.fetchone()["cnt"]
+
+            # Posts published
+            cur.execute(
+                """
+                SELECT COUNT(*) AS cnt FROM social_posts
+                WHERE status = 'published'
+                  AND created_at >= now() - interval '1 day' * %s
+                """,
+                (days,),
+            )
+            posts_published = cur.fetchone()["cnt"]
+
+        return {
+            "messages_sent": int(messages_sent),
+            "bot_resolution_pct": round(float(bot_resolution_pct), 1),
+            "appointments_booked": int(appointments_booked),
+            "posts_published": int(posts_published),
+        }
+    finally:
+        conn.close()
+
+
+def fetch_activity_chart_data(days: int = 7) -> list[dict]:
+    """Return daily activity for the last N days (two series).
+
+    Returns list of dicts ordered by date ASC. Each dict:
+    { date: date, messages_sent: int, appointments: int }
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT
+                    gs.day::date AS date,
+                    COALESCE(m.cnt, 0) AS messages_sent,
+                    COALESCE(a.cnt, 0) AS appointments
+                FROM generate_series(
+                    (now() - interval '1 day' * (%s - 1))::date,
+                    now()::date,
+                    '1 day'::interval
+                ) AS gs(day)
+                LEFT JOIN (
+                    SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+                    FROM messages
+                    WHERE direction = 'outbound'
+                      AND created_at >= now() - interval '1 day' * %s
+                    GROUP BY DATE(created_at)
+                ) m ON m.day = gs.day::date
+                LEFT JOIN (
+                    SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+                    FROM appointments
+                    WHERE status = 'confirmed'
+                      AND created_at >= now() - interval '1 day' * %s
+                    GROUP BY DATE(created_at)
+                ) a ON a.day = gs.day::date
+                ORDER BY gs.day ASC
+                """,
+                (days, days, days),
+            )
+            return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def fetch_workflow_errors(limit: int = 20) -> list[dict]:
+    """Return the most recent N workflow errors for the error log table.
+
+    Returns list of dicts ordered by created_at DESC. Each dict:
+    { id, workflow_name, node_name, error_message, created_at }
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, workflow_name, node_name, error_message, created_at
+                FROM workflow_errors
+                ORDER BY created_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
