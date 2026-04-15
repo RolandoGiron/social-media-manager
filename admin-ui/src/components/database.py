@@ -928,3 +928,63 @@ def fetch_workflow_errors(limit: int = 20) -> list[dict]:
             return [dict(r) for r in cur.fetchall()]
     finally:
         conn.close()
+
+
+# =============================================================================
+# Campaign delivery analytics (Phase 7 — DASH-02)
+# =============================================================================
+
+def fetch_campaign_delivery_analytics(days: int = 30, limit: int = 10) -> list[dict]:
+    """Return per-campaign delivery analytics for the last N days.
+
+    Returns list of dicts ordered by created_at DESC (most recent first).
+    Each dict:
+    {
+        id: UUID,
+        campaign_name: str,
+        segment_tag_names: str,
+        created_at: datetime,
+        total_recipients: int,
+        sent: int,
+        delivered: int,
+        read: int,
+        failed: int,
+    }
+
+    Status funnel logic (cumulative, not exclusive buckets):
+    - sent      = recipients who got past pending (status IN sent, delivered, read)
+    - delivered = subset of sent confirmed delivered by Evolution API webhook
+    - read      = subset of delivered who opened the message
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT
+                    cl.id,
+                    cl.campaign_name,
+                    cl.created_at,
+                    cl.total_recipients,
+                    COALESCE(
+                        (SELECT string_agg(t.name, ', ')
+                         FROM tags t WHERE t.id = ANY(cl.segment_tags)),
+                        '—'
+                    ) AS segment_tag_names,
+                    COUNT(cr.id) FILTER (WHERE cr.status IN ('sent','delivered','read')) AS sent,
+                    COUNT(cr.id) FILTER (WHERE cr.status IN ('delivered','read'))        AS delivered,
+                    COUNT(cr.id) FILTER (WHERE cr.status = 'read')                       AS read,
+                    COUNT(cr.id) FILTER (WHERE cr.status = 'failed')                     AS failed
+                FROM campaign_log cl
+                LEFT JOIN campaign_recipients cr ON cr.campaign_id = cl.id
+                WHERE cl.created_at >= now() - interval '1 day' * %s
+                  AND cl.status IN ('completed', 'in_progress', 'cancelled')
+                GROUP BY cl.id
+                ORDER BY cl.created_at DESC
+                LIMIT %s
+                """,
+                (days, limit),
+            )
+            return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
