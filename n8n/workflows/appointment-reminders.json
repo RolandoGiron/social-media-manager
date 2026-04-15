@@ -1,0 +1,732 @@
+{
+  "name": "appointment-reminders",
+  "active": false,
+  "notes": "Activate manually after testing. Requires a message_templates row with category='recordatorio' and is_active=true.",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "automation" },
+    { "name": "appointments" }
+  ],
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Fetch Reminder Template",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [500, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT body, variables\nFROM message_templates\nWHERE category = 'recordatorio'\n  AND is_active = true\nORDER BY created_at ASC\nLIMIT 1",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "Template Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [750, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-template-body",
+              "leftValue": "={{ $json.body }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "name": "Log No Template Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1000, 160],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, node_name, error_message, error_details)\nVALUES (\n  'appointment-reminders',\n  'Fetch Reminder Template',\n  'No active template with category=recordatorio found',\n  '{\"reason\": \"no_active_template\"}'::jsonb\n)",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0005-0005-0005-000000000005",
+      "name": "Query 24h Appointments",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1000, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    a.id AS appointment_id,\n    a.scheduled_at,\n    a.appointment_type,\n    p.first_name AS nombre,\n    p.phone_normalized AS phone\nFROM appointments a\nJOIN patients p ON a.patient_id = p.id\nWHERE a.status = 'confirmed'\n  AND a.reminder_24h_sent = false\n  AND a.scheduled_at BETWEEN NOW() + INTERVAL '23 hours 45 minutes'\n                         AND NOW() + INTERVAL '24 hours 15 minutes'",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0006-0006-0006-000000000006",
+      "name": "Query 1h Appointments",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1000, 440],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    a.id AS appointment_id,\n    a.scheduled_at,\n    a.appointment_type,\n    p.first_name AS nombre,\n    p.phone_normalized AS phone\nFROM appointments a\nJOIN patients p ON a.patient_id = p.id\nWHERE a.status = 'confirmed'\n  AND a.reminder_1h_sent = false\n  AND a.scheduled_at BETWEEN NOW() + INTERVAL '45 minutes'\n                         AND NOW() + INTERVAL '1 hour 15 minutes'",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0007-0007-0007-000000000007",
+      "name": "Loop 24h Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1250, 300],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0008-0008-0008-000000000008",
+      "name": "Loop 1h Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1250, 440],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0009-0009-0009-000000000009",
+      "name": "Render 24h Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 300],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst template = $('Fetch Reminder Template').first().json;\n\n// Format date/time in America/Mexico_City\nconst tz = 'America/Mexico_City';\nconst dt = new Date(item.scheduled_at);\n\nconst dtMX = new Intl.DateTimeFormat('es-MX', {\n  timeZone: tz,\n  weekday: 'long',\n  day: 'numeric',\n  month: 'long',\n  hour: '2-digit',\n  minute: '2-digit',\n  hour12: true\n});\n\nconst parts = dtMX.formatToParts(dt);\nconst get = (type) => parts.find(p => p.type === type)?.value ?? '';\n\nconst fecha = `${get('weekday')} ${get('day')} de ${get('month')}`;\nconst hora = `${get('hour')}:${get('minute')} ${get('dayPeriod')}`;\n\nlet body = template.body\n  .replace(/\\{\\{nombre\\}\\}/gi, item.nombre || '')\n  .replace(/\\{\\{tipo\\}\\}/gi, item.appointment_type || '')\n  .replace(/\\{\\{fecha\\}\\}/gi, fecha)\n  .replace(/\\{\\{hora\\}\\}/gi, hora);\n\nreturn [{ json: { ...item, rendered_message: body } }];"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0010-0010-0010-000000000010",
+      "name": "Render 1h Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 440],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst template = $('Fetch Reminder Template').first().json;\n\n// Format date/time in America/Mexico_City\nconst tz = 'America/Mexico_City';\nconst dt = new Date(item.scheduled_at);\n\nconst dtMX = new Intl.DateTimeFormat('es-MX', {\n  timeZone: tz,\n  weekday: 'long',\n  day: 'numeric',\n  month: 'long',\n  hour: '2-digit',\n  minute: '2-digit',\n  hour12: true\n});\n\nconst parts = dtMX.formatToParts(dt);\nconst get = (type) => parts.find(p => p.type === type)?.value ?? '';\n\nconst fecha = `${get('weekday')} ${get('day')} de ${get('month')}`;\nconst hora = `${get('hour')}:${get('minute')} ${get('dayPeriod')}`;\n\nlet body = template.body\n  .replace(/\\{\\{nombre\\}\\}/gi, item.nombre || '')\n  .replace(/\\{\\{tipo\\}\\}/gi, item.appointment_type || '')\n  .replace(/\\{\\{fecha\\}\\}/gi, fecha)\n  .replace(/\\{\\{hora\\}\\}/gi, hora);\n\nreturn [{ json: { ...item, rendered_message: body } }];"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0011-0011-0011-000000000011",
+      "name": "Send 24h WA Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1750, 300],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 30000,
+      "continueOnFail": true,
+      "parameters": {
+        "method": "POST",
+        "url": "=http://evolution-api:8080/message/sendText/clinic-main",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "Jehova01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.rendered_message }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0012-0012-0012-000000000012",
+      "name": "Send 1h WA Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1750, 440],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 30000,
+      "continueOnFail": true,
+      "parameters": {
+        "method": "POST",
+        "url": "=http://evolution-api:8080/message/sendText/clinic-main",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "Jehova01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.rendered_message }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0013-0013-0013-000000000013",
+      "name": "24h Send Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2000, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-24h-status-gte",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "check-24h-status-lte",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 299,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0014-0014-0014-000000000014",
+      "name": "1h Send Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2000, 440],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-1h-status-gte",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "check-1h-status-lte",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 299,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0015-0015-0015-000000000015",
+      "name": "Mark 24h Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2250, 220],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE appointments\nSET reminder_24h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 24h Message').item.json.appointment_id }}'::uuid",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0016-0016-0016-000000000016",
+      "name": "Mark 1h Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2250, 360],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE appointments\nSET reminder_1h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 1h Message').item.json.appointment_id }}'::uuid",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0017-0017-0017-000000000017",
+      "name": "Log 24h Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2250, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, node_name, error_message, error_details)\nVALUES (\n  'appointment-reminders',\n  'Send 24h WA Reminder',\n  'WhatsApp send failed after retry for appointment {{ $('Render 24h Message').item.json.appointment_id }}',\n  '{{ JSON.stringify({ appointment_id: $('Render 24h Message').item.json.appointment_id, phone: $('Render 24h Message').item.json.phone }) }}'::jsonb\n)",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0018-0018-0018-000000000018",
+      "name": "Log 1h Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2250, 440],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, node_name, error_message, error_details)\nVALUES (\n  'appointment-reminders',\n  'Send 1h WA Reminder',\n  'WhatsApp send failed after retry for appointment {{ $('Render 1h Message').item.json.appointment_id }}',\n  '{{ JSON.stringify({ appointment_id: $('Render 1h Message').item.json.appointment_id, phone: $('Render 1h Message').item.json.phone }) }}'::jsonb\n)",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0019-0019-0019-000000000019",
+      "name": "Mark 24h Sent After Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2500, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE appointments\nSET reminder_24h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 24h Message').item.json.appointment_id }}'::uuid",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0020-0020-0020-000000000020",
+      "name": "Mark 1h Sent After Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2500, 440],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE appointments\nSET reminder_1h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 1h Message').item.json.appointment_id }}'::uuid",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credential",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0021-0021-0021-000000000021",
+      "name": "Loop 24h Back",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2750, 220],
+      "parameters": {}
+    },
+    {
+      "id": "a1b2c3d4-0022-0022-0022-000000000022",
+      "name": "Loop 1h Back",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2750, 360],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Reminder Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Reminder Template": {
+      "main": [
+        [
+          {
+            "node": "Template Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Template Exists?": {
+      "main": [
+        [
+          {
+            "node": "Query 24h Appointments",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Query 1h Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log No Template Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query 24h Appointments": {
+      "main": [
+        [
+          {
+            "node": "Loop 24h Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query 1h Appointments": {
+      "main": [
+        [
+          {
+            "node": "Loop 1h Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop 24h Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Render 24h Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop 1h Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Render 1h Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render 24h Message": {
+      "main": [
+        [
+          {
+            "node": "Send 24h WA Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render 1h Message": {
+      "main": [
+        [
+          {
+            "node": "Send 1h WA Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send 24h WA Reminder": {
+      "main": [
+        [
+          {
+            "node": "24h Send Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send 1h WA Reminder": {
+      "main": [
+        [
+          {
+            "node": "1h Send Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "24h Send Success?": {
+      "main": [
+        [
+          {
+            "node": "Mark 24h Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log 24h Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1h Send Success?": {
+      "main": [
+        [
+          {
+            "node": "Mark 1h Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log 1h Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark 24h Sent": {
+      "main": [
+        [
+          {
+            "node": "Loop 24h Back",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark 1h Sent": {
+      "main": [
+        [
+          {
+            "node": "Loop 1h Back",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log 24h Failure": {
+      "main": [
+        [
+          {
+            "node": "Mark 24h Sent After Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log 1h Failure": {
+      "main": [
+        [
+          {
+            "node": "Mark 1h Sent After Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark 24h Sent After Failure": {
+      "main": [
+        [
+          {
+            "node": "Loop 24h Back",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark 1h Sent After Failure": {
+      "main": [
+        [
+          {
+            "node": "Loop 1h Back",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop 24h Back": {
+      "main": [
+        [
+          {
+            "node": "Loop 24h Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop 1h Back": {
+      "main": [
+        [
+          {
+            "node": "Loop 1h Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
