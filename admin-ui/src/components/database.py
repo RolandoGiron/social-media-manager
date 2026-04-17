@@ -820,7 +820,7 @@ def fetch_dashboard_kpis(days: int = 30) -> dict:
             cur.execute(
                 """
                 SELECT
-                    COUNT(*) FILTER (WHERE human_handoff = false) AS bot_resolved,
+                    COUNT(*) FILTER (WHERE state != 'human_handoff') AS bot_resolved,
                     COUNT(*) AS total
                 FROM conversations
                 WHERE created_at >= now() - interval '1 day' * %s
