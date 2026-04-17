@@ -189,7 +189,7 @@
           "parameters": [
             {
               "name": "apikey",
-              "value": "Jehova01"
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -238,7 +238,7 @@
           "parameters": [
             {
               "name": "apikey",
-              "value": "Jehova01"
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
             },
             {
               "name": "Content-Type",
