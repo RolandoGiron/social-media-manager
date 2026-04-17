@@ -9,6 +9,17 @@
 #
 # Services managed here: postgres, evolution-api, streamlit
 # Services NOT managed here (already on VPS): traefik, n8n, redis (hg-redis)
+#
+# POST-STARTUP (run once after first `docker compose -f docker-compose.prod.yml up -d`):
+#   docker network connect clinic-net n8n-dlyc-n8n-1
+#
+#   This lets n8n resolve the hostname "postgres" for workflow credentials.
+#   Must be re-run if the n8n container is recreated from the Hostinger panel.
+#
+# PORTS 80/443:
+#   Traefik runs network_mode:host so it routes directly to container bridge IPs.
+#   evolution-api and streamlit expose nothing on the host — Traefik reads their
+#   labels, gets their clinic-net IP, and proxies HTTPS traffic to them.
 
 services:
   postgres:
@@ -112,6 +123,7 @@ services:
 
 networks:
   clinic-net:
+    name: clinic-net
     driver: bridge
 
 volumes:

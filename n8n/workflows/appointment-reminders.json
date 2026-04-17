@@ -183,7 +183,7 @@
       "continueOnFail": true,
       "parameters": {
         "method": "POST",
-        "url": "=http://evolution-api:8080/message/sendText/clinic-main",
+        "url": "=http://clinic-evolution:8080/message/sendText/clinic-main",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -232,7 +232,7 @@
       "continueOnFail": true,
       "parameters": {
         "method": "POST",
-        "url": "=http://evolution-api:8080/message/sendText/clinic-main",
+        "url": "=http://clinic-evolution:8080/message/sendText/clinic-main",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

@@ -219,7 +219,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://n8n:5678/webhook/mock-social-log",
+        "url": "http://n8n-dlyc-n8n-1:5678/webhook/mock-social-log",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"post_id\": \"{{ $json.id }}\",\n  \"caption\": \"{{ $json.caption }}\",\n  \"platforms\": {{ JSON.stringify($json.platforms) }},\n  \"public_image_url\": \"{{ $json.public_image_url }}\"\n}",
