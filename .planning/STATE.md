@@ -94,9 +94,10 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260408-09t | Guardar campo enfermedad del CSV en notes y mostrar en listado de pacientes | 2026-04-08 | 322efb0 | [260408-09t-guardar-campo-enfermedad-del-csv-en-note](./quick/260408-09t-guardar-campo-enfermedad-del-csv-en-note/) |
 | 260408-14q | CRUD de pacientes: crear, editar y borrar desde la UI | 2026-04-08 | abe335f | [260408-14q-agregar-crud-de-pacientes-crear-editar-y](./quick/260408-14q-agregar-crud-de-pacientes-crear-editar-y/) |
+| 260417-ied | fix CR-01 CR-02 WR-03 in appointment-reminders workflow and database.py | 2026-04-17 | 810b7f7 | [260417-ied-fix-cr-01-cr-02-wr-03-in-appointment-rem](./quick/260417-ied-fix-cr-01-cr-02-wr-03-in-appointment-rem/) |
 
 ## Session Continuity
 
-Last session: 2026-04-13
-Stopped at: Session resumed, proceeding to execute Phase 06
-Resume file: .planning/phases/06-social-media-publishing/06-01-PLAN.md
+Last session: 2026-04-17
+Stopped at: Quick task 260417-ied complete — fixed CR-01 (hardcoded API key), CR-02 (Mustache syntax in 6 Postgres nodes), WR-03 (bot_resolution_pct schema mismatch)
+Resume file: .planning/quick/260417-ied-fix-cr-01-cr-02-wr-03-in-appointment-rem/260417-ied-SUMMARY.md
