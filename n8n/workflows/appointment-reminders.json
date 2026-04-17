@@ -351,7 +351,7 @@
       "position": [2250, 220],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE appointments\nSET reminder_24h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 24h Message').item.json.appointment_id }}'::uuid",
+        "query": "=UPDATE appointments\nSET reminder_24h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 24h Message').item.json.appointment_id }}'::uuid",
         "options": {}
       },
       "credentials": {
@@ -369,7 +369,7 @@
       "position": [2250, 360],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE appointments\nSET reminder_1h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 1h Message').item.json.appointment_id }}'::uuid",
+        "query": "=UPDATE appointments\nSET reminder_1h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 1h Message').item.json.appointment_id }}'::uuid",
         "options": {}
       },
       "credentials": {
@@ -387,7 +387,7 @@
       "position": [2250, 300],
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO workflow_errors (workflow_name, node_name, error_message, error_details)\nVALUES (\n  'appointment-reminders',\n  'Send 24h WA Reminder',\n  'WhatsApp send failed after retry for appointment {{ $('Render 24h Message').item.json.appointment_id }}',\n  '{{ JSON.stringify({ appointment_id: $('Render 24h Message').item.json.appointment_id, phone: $('Render 24h Message').item.json.phone }) }}'::jsonb\n)",
+        "query": "=INSERT INTO workflow_errors (workflow_name, node_name, error_message, error_details)\nVALUES (\n  'appointment-reminders',\n  'Send 24h WA Reminder',\n  'WhatsApp send failed after retry for appointment {{ $('Render 24h Message').item.json.appointment_id }}',\n  '{{ JSON.stringify({ appointment_id: $('Render 24h Message').item.json.appointment_id, phone: $('Render 24h Message').item.json.phone }) }}'::jsonb\n)",
         "options": {}
       },
       "credentials": {
@@ -405,7 +405,7 @@
       "position": [2250, 440],
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO workflow_errors (workflow_name, node_name, error_message, error_details)\nVALUES (\n  'appointment-reminders',\n  'Send 1h WA Reminder',\n  'WhatsApp send failed after retry for appointment {{ $('Render 1h Message').item.json.appointment_id }}',\n  '{{ JSON.stringify({ appointment_id: $('Render 1h Message').item.json.appointment_id, phone: $('Render 1h Message').item.json.phone }) }}'::jsonb\n)",
+        "query": "=INSERT INTO workflow_errors (workflow_name, node_name, error_message, error_details)\nVALUES (\n  'appointment-reminders',\n  'Send 1h WA Reminder',\n  'WhatsApp send failed after retry for appointment {{ $('Render 1h Message').item.json.appointment_id }}',\n  '{{ JSON.stringify({ appointment_id: $('Render 1h Message').item.json.appointment_id, phone: $('Render 1h Message').item.json.phone }) }}'::jsonb\n)",
         "options": {}
       },
       "credentials": {
@@ -423,7 +423,7 @@
       "position": [2500, 300],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE appointments\nSET reminder_24h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 24h Message').item.json.appointment_id }}'::uuid",
+        "query": "=UPDATE appointments\nSET reminder_24h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 24h Message').item.json.appointment_id }}'::uuid",
         "options": {}
       },
       "credentials": {
@@ -441,7 +441,7 @@
       "position": [2500, 440],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE appointments\nSET reminder_1h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 1h Message').item.json.appointment_id }}'::uuid",
+        "query": "=UPDATE appointments\nSET reminder_1h_sent = true, updated_at = now()\nWHERE id = '{{ $('Render 1h Message').item.json.appointment_id }}'::uuid",
         "options": {}
       },
       "credentials": {
