@@ -22,6 +22,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: clinic-redis
+    profiles: [dev]
     volumes:
       - redis_data:/data
     command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
@@ -37,6 +38,7 @@ services:
   n8n:
     image: n8nio/n8n:latest
     container_name: clinic-n8n
+    profiles: [dev]
     depends_on:
       postgres:
         condition: service_healthy
@@ -140,6 +142,7 @@ services:
   caddy:
     image: caddy:2-alpine
     container_name: clinic-caddy
+    profiles: [dev]
     depends_on:
       - n8n
       - evolution-api

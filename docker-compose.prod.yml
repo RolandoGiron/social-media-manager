@@ -105,6 +105,7 @@ services:
     volumes:
       - uploads:/opt/clinic-crm/uploads
     environment:
+      TZ: America/Guatemala
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       # Points to the existing n8n instance on VPS via public HTTPS URL
       N8N_WEBHOOK_BASE_URL: https://${N8N_HOST}
