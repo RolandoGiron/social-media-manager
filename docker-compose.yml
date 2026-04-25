@@ -122,6 +122,7 @@ services:
       - ./admin-ui/src:/app
       - uploads:/opt/clinic-crm/uploads
     environment:
+      TZ: America/Guatemala
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       N8N_WEBHOOK_BASE_URL: http://n8n:5678
       EVOLUTION_API_URL: http://evolution-api:8080

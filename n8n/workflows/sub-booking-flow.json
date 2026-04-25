@@ -114,7 +114,7 @@
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Extract the type of dermatology service the patient wants. Common types: Consulta general, Limpieza facial, Tratamiento de acne, Revision de lunares, Botox, Peeling quimico. If the patient has not specified a service type, respond with exactly \\'NEEDS_INPUT\\'. If they specified a service, respond with ONLY the service name, nothing else.' }, { role: 'user', content: $('Execute Workflow Trigger').item.json.message_text }], temperature: 0.1 } }}",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Extract the type of dermatology service the patient wants. Common types: Consulta general, Limpieza facial, Tratamiento de acne, Revision de lunares, Botox, Peeling quimico. If the patient has not specified a service type, respond with exactly \\'NEEDS_INPUT\\'. If they specified a service, respond with ONLY the service name, nothing else.' }, { role: 'user', content: $('Execute Workflow Trigger').item.json.message_text || '' }], temperature: 0.1 } }}",
         "options": {}
       },
       "credentials": {
@@ -241,7 +241,7 @@
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Extract the preferred appointment date and time from the patient message. Today is ' + $now.format('yyyy-MM-dd') + '. Return ONLY a JSON object with this exact format: {\"date\": \"YYYY-MM-DD\", \"time\": \"HH:mm\"}. If you cannot extract a clear date and time, return exactly: {\"error\": \"NEEDS_INPUT\"}. No explanation, no markdown, just the JSON.' }, { role: 'user', content: $('Execute Workflow Trigger').item.json.message_text }], temperature: 0.1 } }}",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Extract the preferred appointment date and time from the patient message. Today is ' + $now.format('yyyy-MM-dd') + '. Return ONLY a JSON object with this exact format: {\"date\": \"YYYY-MM-DD\", \"time\": \"HH:mm\"}. If you cannot extract a clear date and time, return exactly: {\"error\": \"NEEDS_INPUT\"}. No explanation, no markdown, just the JSON.' }, { role: 'user', content: $('Execute Workflow Trigger').item.json.message_text || '' }], temperature: 0.1 } }}",
         "options": {}
       },
       "credentials": {

@@ -7,6 +7,7 @@ Implements decisions D-14 through D-17 from 04-CONTEXT.md:
 - D-17: Auto-refresh every 10 seconds
 """
 import streamlit as st
+from datetime import timezone, timedelta
 from components.sidebar import render_sidebar
 from components.database import (
     fetch_conversations,
@@ -15,6 +16,17 @@ from components.database import (
     update_conversation_state,
 )
 from components.evolution_api import EvolutionAPIClient, EvolutionAPIError
+
+_GTM6 = timezone(timedelta(hours=-6))
+
+
+def _to_gtm6(dt):
+    """Convert a UTC-aware or naive-UTC datetime to GTM-6 (America/Guatemala)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(_GTM6)
 
 render_sidebar()
 
@@ -79,8 +91,9 @@ with left_col:
             last_msg = conv.get("last_message") or ""
             preview = (last_msg[:50] + "...") if len(last_msg) > 50 else last_msg
 
-            # Format timestamp
+            # Format timestamp in GTM-6
             ts = conv.get("last_message_at") or conv.get("created_at")
+            ts = _to_gtm6(ts)
             ts_str = ts.strftime("%d/%m %H:%M") if ts and hasattr(ts, "strftime") else str(ts or "")
 
             label = f"{prefix}{name} [{badge}]\n{preview}\n{ts_str}"
@@ -125,7 +138,7 @@ with right_col:
                 for msg in messages:
                     sender = msg.get("sender", "")
                     content = msg.get("content") or ""
-                    created_at = msg.get("created_at")
+                    created_at = _to_gtm6(msg.get("created_at"))
                     ts_str = created_at.strftime("%H:%M") if created_at and hasattr(created_at, "strftime") else str(created_at or "")
 
                     if sender == "patient":
