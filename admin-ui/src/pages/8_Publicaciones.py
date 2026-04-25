@@ -157,9 +157,10 @@ if st.button(
         f"Publicaci\u00f3n programada para {pub_date.strftime('%d/%m/%Y')} "
         f"a las {pub_time.strftime('%H:%M')}."
     )
-    # Clear composer state so the next render is empty
-    for key in ("pubs_caption", "pubs_image_bytes", "pubs_image_name"):
-        st.session_state[key] = "" if key == "pubs_caption" else None
+    # Delete keys so setdefault at top restores defaults on next run.
+    # Direct assignment fails for widget-bound keys (pubs_caption).
+    for key in ("pubs_caption", "pubs_image_bytes", "pubs_image_name", "pubs_uploader"):
+        st.session_state.pop(key, None)
     st.rerun()
 
 st.markdown("---")
