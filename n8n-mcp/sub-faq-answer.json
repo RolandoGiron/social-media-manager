@@ -1,1 +1,107 @@
-{"result":{"content":[{"type":"text","text":"Workflow is not available in MCP. Enable MCP access in workflow settings."}],"isError":true},"jsonrpc":"2.0","id":42}
+{
+  "name": "sub-faq-answer",
+  "nodes": [
+    {
+      "id": "execute-workflow-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "openai-faq-answer",
+      "name": "Generate FAQ Answer (OpenAI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Eres la asistente virtual de la clínica dermatológica. Tu única tarea es encontrar la pregunta del knowledge base que MEJOR responde la consulta del paciente, y devolver EXACTAMENTE la respuesta de esa FAQ sin modificar, agregar ni quitar ninguna palabra.\n\nSi ninguna FAQ responde adecuadamente la consulta, responde exactamente: \"No tengo esa información. Te comunico con un miembro de nuestro equipo.\"\n\nKnowledge base:\n' + $json.formatted_faqs }, { role: 'user', content: $json.message_text }], temperature: 0.3 } }}",
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credential",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "id": "set-faq-output",
+      "name": "Set FAQ Answer Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response_text",
+              "name": "response_text",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "is_handoff",
+              "name": "is_handoff",
+              "value": "={{ $json.choices[0].message.content.includes('No tengo esa informacion') }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate FAQ Answer (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate FAQ Answer (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Set FAQ Answer Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "chatbot"
+    },
+    {
+      "name": "sub-workflow"
+    }
+  ]
+}

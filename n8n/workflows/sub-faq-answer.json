@@ -6,7 +6,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {}
     },
     {
@@ -14,7 +17,10 @@
       "name": "Generate FAQ Answer (OpenAI)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 300],
+      "position": [
+        480,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://api.openai.com/v1/chat/completions",
@@ -22,7 +28,7 @@
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Eres la asistente virtual de la clinica dermatologica. Responde en espanol, de forma amable y concisa.\\n\\nUsa SOLAMENTE la informacion del siguiente knowledge base para responder. Si la pregunta no esta cubierta, responde exactamente: \"No tengo esa informacion. Te comunico con un miembro de nuestro equipo.\"\\n\\nKnowledge base:\\n' + $json.formatted_faqs }, { role: 'user', content: $json.message_text }], temperature: 0.3 } }}",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Eres la asistente virtual de la clínica dermatológica. Tu única tarea es encontrar la pregunta del knowledge base que MEJOR responde la consulta del paciente, y devolver EXACTAMENTE la respuesta de esa FAQ sin modificar, agregar ni quitar ninguna palabra.\n\nSi ninguna FAQ responde adecuadamente la consulta, responde exactamente: \"No tengo esa información. Te comunico con un miembro de nuestro equipo.\"\n\nKnowledge base:\n' + $json.formatted_faqs }, { role: 'user', content: $json.message_text }], temperature: 0.3 } }}",
         "options": {}
       },
       "credentials": {
@@ -37,7 +43,10 @@
       "name": "Set FAQ Answer Output",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [720, 300],
+      "position": [
+        720,
+        300
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -88,7 +97,11 @@
     "executionOrder": "v1"
   },
   "tags": [
-    { "name": "chatbot" },
-    { "name": "sub-workflow" }
+    {
+      "name": "chatbot"
+    },
+    {
+      "name": "sub-workflow"
+    }
   ]
 }

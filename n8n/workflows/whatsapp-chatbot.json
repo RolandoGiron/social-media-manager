@@ -693,7 +693,7 @@
             {
               "id": "response_text",
               "name": "response_text",
-              "value": "Hola! Soy la asistente virtual de la clinica. En que puedo ayudarte? Puedo responder preguntas sobre nuestros servicios, horarios, ubicacion, o ayudarte a agendar una cita.",
+              "value": "¡Hola! Soy la asistente virtual de la clínica. ¿En qué puedo ayudarte? Puedo responder preguntas sobre nuestros servicios, horarios, precios y ubicación.",
               "type": "string"
             },
             {
@@ -874,6 +874,61 @@
         100
       ],
       "parameters": {}
+    },
+    {
+      "id": "booking-handoff-response",
+      "name": "Set Booking Handoff Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3600,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response_text",
+              "name": "response_text",
+              "value": "Para agendar su cita, un asesor de nuestra clínica le atenderá directamente. En breve lo contactamos. 📅",
+              "type": "string"
+            },
+            {
+              "id": "new_state",
+              "name": "new_state",
+              "value": "human_handoff",
+              "type": "string"
+            },
+            {
+              "id": "is_handoff",
+              "name": "is_handoff",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "new_context",
+              "name": "new_context",
+              "value": "={}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "active-booking-handoff",
+      "name": "Set Active Booking Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const convData = $('Merge Conversation Data').first().json;\nconst extractFields = $('Extract Message Fields').first().json;\n\nreturn {\n  json: {\n    response_text: 'Para coordinar su cita, un asesor le atenderá directamente. En breve lo contactamos. 📅',\n    new_state: 'human_handoff',\n    new_context: '{}',\n    conversation_id: convData.id,\n    remote_jid: extractFields.remote_jid,\n    instance_name: extractFields.instance_name,\n    api_key: extractFields.api_key\n  }\n};"
+      }
     }
   ],
   "connections": {
@@ -995,7 +1050,7 @@
       "main": [
         [
           {
-            "node": "Continue Booking Flow",
+            "node": "Set Active Booking Handoff",
             "type": "main",
             "index": 0
           }
@@ -1075,7 +1130,7 @@
         ],
         [
           {
-            "node": "Start Booking Flow",
+            "node": "Set Booking Handoff Response",
             "type": "main",
             "index": 0
           }
@@ -1214,6 +1269,28 @@
         [
           {
             "node": "Send WA Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Booking Handoff Response": {
+      "main": [
+        [
+          {
+            "node": "Merge Intent Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Active Booking Handoff": {
+      "main": [
+        [
+          {
+            "node": "Merge All Response Paths",
             "type": "main",
             "index": 0
           }

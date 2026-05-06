@@ -7,7 +7,7 @@ CREATE TABLE knowledge_base (
     pregunta TEXT NOT NULL,
     respuesta TEXT NOT NULL,
     categoria TEXT NOT NULL DEFAULT 'general'
-        CHECK (categoria IN ('horarios', 'ubicacion', 'precios', 'servicios', 'general')),
+        CHECK (categoria IN ('horarios', 'ubicacion', 'precios', 'servicios', 'general', 'promocion')),
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
