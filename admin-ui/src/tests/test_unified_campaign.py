@@ -72,6 +72,7 @@ def _load_campanhas_module(session_state: dict, module_name: str = "pages.campan
     db_mock.fetch_campaign_status = mock.MagicMock(return_value=None)
     db_mock.cancel_campaign = mock.MagicMock()
     db_mock.execute_values = mock.MagicMock()
+    db_mock.fetch_campaign_delivery_analytics = mock.MagicMock(return_value=[])
 
     # --- components.social_posts ---
     sp_mock = types.ModuleType("components.social_posts")
