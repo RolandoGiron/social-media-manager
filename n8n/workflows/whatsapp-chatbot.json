@@ -515,6 +515,28 @@
               },
               "renameOutput": true,
               "outputKey": "GREETING"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rule-promotion",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "PROMOTION",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PROMOTION"
             }
           ]
         },
@@ -1068,6 +1090,13 @@
         [
           {
             "node": "Set Greeting Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FAQ Answer",
             "type": "main",
             "index": 0
           }
