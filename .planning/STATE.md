@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 stopped_at: Phase 06 Plan 03 code complete — awaiting human verification checkpoint (Task 3)
 last_updated: "2026-04-14T06:00:00.000Z"
-last_activity: 2026-04-14 -- Phase 06 Plan 03 test fixes committed, all 139 tests green
+last_activity: 2026-05-06 -- Quick task 260506-e4s complete: FAQ categories updated in DB + n8n workflows deployed
 progress:
   total_phases: 7
   completed_phases: 5
@@ -95,7 +95,8 @@ None yet.
 | 260408-09t | Guardar campo enfermedad del CSV en notes y mostrar en listado de pacientes | 2026-04-08 | 322efb0 | [260408-09t-guardar-campo-enfermedad-del-csv-en-note](./quick/260408-09t-guardar-campo-enfermedad-del-csv-en-note/) |
 | 260408-14q | CRUD de pacientes: crear, editar y borrar desde la UI | 2026-04-08 | abe335f | [260408-14q-agregar-crud-de-pacientes-crear-editar-y](./quick/260408-14q-agregar-crud-de-pacientes-crear-editar-y/) |
 | 260417-ied | fix CR-01 CR-02 WR-03 in appointment-reminders workflow and database.py | 2026-04-17 | 810b7f7 | [260417-ied-fix-cr-01-cr-02-wr-03-in-appointment-rem](./quick/260417-ied-fix-cr-01-cr-02-wr-03-in-appointment-rem/) |
-| 260506-5uk | quita el flujo de booking y haz un human handoff cuando traten de hacer una cita, revisa todas las faq en la base de datos para ponerles la categoria que openai probablemente elija para que cualquier pregunta igual o similar a las faq sea contestada con la respuesta de la faq | 2026-05-06 | — | [260506-5uk-quita-el-flujo-de-booking-y-haz-un-human](./quick/260506-5uk-quita-el-flujo-de-booking-y-haz-un-human/) |
+| 260506-5uk | quita el flujo de booking y haz un human handoff cuando traten de hacer una cita, revisa todas las faq en la base de datos para ponerles la categoria que openai probablemente elija para que cualquier pregunta igual o similar a las faq sea contestada con la respuesta de la faq | 2026-05-06 | 125b575 | [260506-5uk-quita-el-flujo-de-booking-y-haz-un-human](./quick/260506-5uk-quita-el-flujo-de-booking-y-haz-un-human/) |
+| 260506-e4s | remove booking flow add human handoff for appointments update FAQ categories for OpenAI intent matching deploy n8n workflows | 2026-05-06 | 0f72873 | [260506-e4s-remove-booking-flow-add-human-handoff-fo](./quick/260506-e4s-remove-booking-flow-add-human-handoff-fo/) |
 
 ## Session Continuity
 
