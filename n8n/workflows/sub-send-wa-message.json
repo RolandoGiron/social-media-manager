@@ -61,7 +61,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { number: $json.remote_jid, title: '¿En qué puedo ayudarte?', description: 'Selecciona una opción para continuar:', footer: 'Clínica Dermatológica', buttons: [{ buttonId: 'promo_precios', buttonText: { displayText: 'Precios / Promo' } }, { buttonId: 'horarios_ubicacion', buttonText: { displayText: 'Horarios / Ubicación' } }, { buttonId: 'agendar_cita', buttonText: { displayText: 'Agendar cita' } }] } }}",
+        "jsonBody": "={{ { number: $json.remote_jid, title: '¿En qué puedo ayudarte?', description: 'Selecciona una opción para continuar:', footer: 'Clínica Dermatológica', buttons: [{ type: 'reply', reply: { id: 'promo_precios', title: 'Precios / Promo' } }, { type: 'reply', reply: { id: 'horarios_ubicacion', title: 'Horarios / Ubicación' } }, { type: 'reply', reply: { id: 'agendar_cita', title: 'Agendar cita' } }] } }}",
         "options": {}
       }
     },
