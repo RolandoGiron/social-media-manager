@@ -97,7 +97,7 @@ None yet.
 | 260417-ied | fix CR-01 CR-02 WR-03 in appointment-reminders workflow and database.py | 2026-04-17 | 810b7f7 | [260417-ied-fix-cr-01-cr-02-wr-03-in-appointment-rem](./quick/260417-ied-fix-cr-01-cr-02-wr-03-in-appointment-rem/) |
 | 260506-5uk | quita el flujo de booking y haz un human handoff cuando traten de hacer una cita, revisa todas las faq en la base de datos para ponerles la categoria que openai probablemente elija para que cualquier pregunta igual o similar a las faq sea contestada con la respuesta de la faq | 2026-05-06 | 125b575 | [260506-5uk-quita-el-flujo-de-booking-y-haz-un-human](./quick/260506-5uk-quita-el-flujo-de-booking-y-haz-un-human/) |
 | 260506-e4s | remove booking flow add human handoff for appointments update FAQ categories for OpenAI intent matching deploy n8n workflows | 2026-05-06 | 0f72873 | [260506-e4s-remove-booking-flow-add-human-handoff-fo](./quick/260506-e4s-remove-booking-flow-add-human-handoff-fo/) |
-| 260512-d4f | Chatbot Opción D: historial de conversación en LLMs + reply buttons fallback cuando FAQ no encuentra respuesta | 2026-05-12 | — | [260512-d4f-chatbot-historial-y-botones-whatsapp](./quick/260512-d4f-chatbot-historial-y-botones-whatsapp/) |
+| 260512-d4f | Chatbot Opción D: historial de conversación en LLMs + reply buttons fallback cuando FAQ no encuentra respuesta | 2026-05-12 | 399dec6 | [260512-d4f-chatbot-historial-y-botones-whatsapp](./quick/260512-d4f-chatbot-historial-y-botones-whatsapp/) |
 
 ## Session Continuity
 
