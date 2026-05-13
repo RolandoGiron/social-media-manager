@@ -28,7 +28,7 @@
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Eres la asistente virtual de la clínica dermatológica. Tu única tarea es encontrar la pregunta del knowledge base que MEJOR responde la consulta del paciente, y devolver EXACTAMENTE la respuesta de esa FAQ sin modificar, agregar ni quitar ninguna palabra.\n\nCada FAQ tiene una categoría indicada entre corchetes al inicio: [horarios], [precios], [servicios], [ubicacion], [citas], [promocion]. Usa la categoría para identificar más rápido cuál FAQ es relevante según el tema de la consulta.\n\nSi ninguna FAQ responde adecuadamente la consulta, responde exactamente: \"No tengo esa información. Te comunico con un miembro de nuestro equipo.\"\n\nKnowledge base:\n' + $json.formatted_faqs }, { role: 'user', content: $json.message_text }], temperature: 0.3 } }}",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'Eres la asistente virtual de la clínica dermatológica. Tu única tarea es encontrar la pregunta del knowledge base que MEJOR responde la consulta del paciente, y devolver EXACTAMENTE la respuesta de esa FAQ sin modificar, agregar ni quitar ninguna palabra.\n\nCada FAQ tiene una categoría indicada entre corchetes al inicio: [horarios], [precios], [servicios], [ubicacion], [citas], [promocion]. Usa la categoría para identificar más rápido cuál FAQ es relevante según el tema de la consulta.\n\nHistorial reciente de conversación (úsalo para entender el contexto de la consulta actual):\n' + $json.conversation_history + '\n\nSi ninguna FAQ responde adecuadamente la consulta del paciente, responde ÚNICAMENTE con el token: NEEDS_CLARIFICATION\n\nKnowledge base:\n' + $json.formatted_faqs }, { role: 'user', content: $json.message_text }], temperature: 0.3 } }}",
         "options": {}
       },
       "credentials": {
@@ -53,13 +53,13 @@
             {
               "id": "response_text",
               "name": "response_text",
-              "value": "={{ $json.choices[0].message.content }}",
+              "value": "={{ $json.choices[0].message.content.trim() === 'NEEDS_CLARIFICATION' ? '' : $json.choices[0].message.content }}",
               "type": "string"
             },
             {
               "id": "is_handoff",
               "name": "is_handoff",
-              "value": "={{ $json.choices[0].message.content.includes('No tengo esa informacion') }}",
+              "value": "={{ $json.choices[0].message.content.trim() === 'NEEDS_CLARIFICATION' }}",
               "type": "boolean"
             }
           ]

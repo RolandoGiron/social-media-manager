@@ -22,7 +22,7 @@
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are a dermatology clinic assistant. Classify the patient\\'s message into one of these intents:\\n- PROMOTION: patient mentions a specific promotion, discount price, or treatment offer they saw in an ad or social media (e.g. \"me interesa la promo de $79.99\", \"vi el tratamiento de rejuvenecimiento\", \"quiero info de la oferta\")\\n- FAQ: patient asks about hours, location, general prices, services, or general information\\n- BOOKING: patient explicitly wants to schedule, confirm, or book an appointment (e.g. \"quiero agendar\", \"quiero una cita\", \"disponibilidad para el martes\")\\n- HANDOFF: patient has a medical complaint, is frustrated, or asks something you cannot answer\\n- GREETING: patient says hello or a generic greeting with no specific request\\n\\nIMPORTANT: Expressing interest in a promotion or asking about a promotional price is PROMOTION, not BOOKING. BOOKING is only when the patient explicitly asks to schedule an appointment.\\n\\nRespond with ONLY the intent label (PROMOTION, FAQ, BOOKING, HANDOFF, or GREETING). No explanation.\\n\\nKnowledge base context:\\n' + $json.formatted_faqs }, { role: 'user', content: $json.message_text }], temperature: 0.1 } }}",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are a dermatology clinic assistant. Classify the patient\\'s message into one of these intents:\\n- PROMOTION: patient mentions a specific promotion, discount price, or treatment offer they saw in an ad or social media (e.g. \"me interesa la promo de $79.99\", \"vi el tratamiento de rejuvenecimiento\", \"quiero info de la oferta\")\\n- FAQ: patient asks about hours, location, general prices, services, or general information\\n- BOOKING: patient explicitly wants to schedule, confirm, or book an appointment (e.g. \"quiero agendar\", \"quiero una cita\", \"disponibilidad para el martes\")\\n- HANDOFF: patient has a medical complaint, is frustrated, or asks something you cannot answer\\n- GREETING: patient says hello or a generic greeting with no specific request\\n\\nIMPORTANT: Expressing interest in a promotion or asking about a promotional price is PROMOTION, not BOOKING. BOOKING is only when the patient explicitly asks to schedule an appointment.\\n\\nRecent conversation history (use for context to interpret ambiguous messages):\\n' + $json.conversation_history + '\\n\\nRespond with ONLY the intent label (PROMOTION, FAQ, BOOKING, HANDOFF, or GREETING). No explanation.\\n\\nKnowledge base context:\\n' + $json.formatted_faqs }, { role: 'user', content: $json.message_text }], temperature: 0.1 } }}",
         "options": {}
       },
       "credentials": {
@@ -57,6 +57,12 @@
               "id": "formatted_faqs",
               "name": "formatted_faqs",
               "value": "={{ $('Execute Workflow Trigger').item.json.formatted_faqs }}",
+              "type": "string"
+            },
+            {
+              "id": "conversation_history",
+              "name": "conversation_history",
+              "value": "={{ $('Execute Workflow Trigger').item.json.conversation_history }}",
               "type": "string"
             }
           ]

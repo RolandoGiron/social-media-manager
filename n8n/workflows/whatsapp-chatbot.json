@@ -70,7 +70,13 @@
             {
               "id": "message_text",
               "name": "message_text",
-              "value": "={{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text || '' }}",
+              "value": "={{ $json.body.data.message.conversation || ($json.body.data.message.extendedTextMessage || {}).text || ($json.body.data.message.buttonsResponseMessage || {}).selectedButtonId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "button_id",
+              "name": "button_id",
+              "value": "={{ ($json.body.data.message.buttonsResponseMessage || {}).selectedButtonId || '' }}",
               "type": "string"
             },
             {
@@ -113,7 +119,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT c.id, c.state, c.context, c.patient_id, c.wa_contact_id,\n       p.first_name, p.last_name, p.phone_normalized\nFROM conversations c\nLEFT JOIN patients p ON c.patient_id = p.id\nWHERE c.wa_contact_id = '{{ $json.remote_jid }}' AND c.state != 'closed'\nORDER BY c.last_message_at DESC NULLS LAST\nLIMIT 1",
+        "query": "SELECT c.id, c.state, c.context, c.patient_id, c.wa_contact_id,\n       p.first_name, p.last_name, p.phone_normalized,\n       COALESCE((\n         SELECT json_agg(t ORDER BY t.created_at ASC)\n         FROM (\n           SELECT sender, content, created_at\n           FROM messages\n           WHERE conversation_id = c.id\n           ORDER BY created_at DESC\n           LIMIT 5\n         ) t\n       ), '[]'::json) AS recent_messages\nFROM conversations c\nLEFT JOIN patients p ON c.patient_id = p.id\nWHERE c.wa_contact_id = '{{ $json.remote_jid }}' AND c.state != 'closed'\nORDER BY c.last_message_at DESC NULLS LAST\nLIMIT 1",
         "options": {
           "alwaysOutputData": true
         }
@@ -190,7 +196,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const conv = $input.item.json;\nconst msg = $('Extract Message Fields').first().json;\nreturn { json: { ...conv, message_text: msg.message_text, wa_message_id: msg.wa_message_id } };"
+        "jsCode": "const conv = $input.item.json;\nconst msg = $('Extract Message Fields').first().json;\n\nlet messageText = msg.message_text;\nif (msg.button_id) {\n  const buttonMap = {\n    'promo_precios': 'Quiero información sobre precios y la promoción',\n    'horarios_ubicacion': '¿Cuáles son sus horarios y dónde están ubicados?',\n    'agendar_cita': 'Quiero agendar una cita'\n  };\n  messageText = buttonMap[msg.button_id] || msg.message_text;\n}\n\nreturn { json: { ...conv, message_text: messageText, wa_message_id: msg.wa_message_id } };"
       }
     },
     {
@@ -389,7 +395,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst extractFields = $('Extract Message Fields').first().json;\nconst mergedConv = $('Merge Conversation Data').first().json;\n\n// Format all FAQ rows into a single string for LLM injection\nconst formattedFaqs = items.map(item => {\n  return `[${item.json.categoria}] Q: ${item.json.pregunta}\\nA: ${item.json.respuesta}`;\n}).join('\\n---\\n');\n\nreturn [{\n  json: {\n    formatted_faqs: formattedFaqs || 'No hay informacion disponible en este momento.',\n    message_text: extractFields.message_text,\n    remote_jid: extractFields.remote_jid,\n    push_name: extractFields.push_name,\n    wa_message_id: extractFields.wa_message_id,\n    instance_name: extractFields.instance_name,\n    api_key: extractFields.api_key,\n    conversation_id: mergedConv.id,\n    conversation_state: mergedConv.state,\n    conversation_context: mergedConv.context || {}\n  }\n}];"
+        "jsCode": "const items = $input.all();\nconst extractFields = $('Extract Message Fields').first().json;\nconst mergedConv = $('Merge Conversation Data').first().json;\n\n// Format all FAQ rows into a single string for LLM injection\nconst formattedFaqs = items.map(item => {\n  return `[${item.json.categoria}] Q: ${item.json.pregunta}\\nA: ${item.json.respuesta}`;\n}).join('\\n---\\n');\n\n// Format conversation history from DB (last 5 messages, chronological order)\nconst recentMessages = Array.isArray(mergedConv.recent_messages) ? mergedConv.recent_messages : [];\nlet conversationHistory = 'Sin historial previo.';\nif (recentMessages.length > 0) {\n  conversationHistory = recentMessages.map(m => {\n    const role = m.sender === 'patient' ? 'Paciente' : 'Bot';\n    return `${role}: ${m.content}`;\n  }).join('\\n');\n}\n\nreturn [{\n  json: {\n    formatted_faqs: formattedFaqs || 'No hay informacion disponible en este momento.',\n    conversation_history: conversationHistory,\n    message_text: mergedConv.message_text || extractFields.message_text,\n    remote_jid: extractFields.remote_jid,\n    push_name: extractFields.push_name,\n    wa_message_id: extractFields.wa_message_id,\n    instance_name: extractFields.instance_name,\n    api_key: extractFields.api_key,\n    conversation_id: mergedConv.id,\n    conversation_state: mergedConv.state,\n    conversation_context: mergedConv.context || {}\n  }\n}];"
       }
     },
     {
@@ -744,7 +750,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const item = $input.item.json;\nconst formatFaqs = $('Format FAQs for LLM').first().json;\n\n// Determine final state and response\nlet newState = item.new_state || 'awaiting_intent';\nlet responseText = item.response_text || '';\nlet newContext = item.new_context || '{}';\n\n// If FAQ response contains handoff phrase, escalate to human_handoff\nif (item.is_handoff === true || (responseText && responseText.includes('No tengo esa informacion'))) {\n  newState = 'human_handoff';\n}\n\n// For FAQ intent (no explicit new_state from faq-answer sub-workflow), set state back to awaiting_intent\nif (!item.new_state && !item.is_handoff) {\n  newState = 'awaiting_intent';\n}\n\nreturn {\n  json: {\n    response_text: responseText,\n    new_state: newState,\n    new_context: newContext,\n    conversation_id: formatFaqs.conversation_id,\n    remote_jid: formatFaqs.remote_jid,\n    instance_name: formatFaqs.instance_name,\n    api_key: formatFaqs.api_key\n  }\n};"
+        "jsCode": "const item = $input.item.json;\nconst formatFaqs = $('Format FAQs for LLM').first().json;\n\nlet newState = item.new_state || 'awaiting_intent';\nlet responseText = item.response_text || '';\nlet newContext = item.new_context || '{}';\nlet sendButtons = false;\n\n// When FAQ can't find an answer, offer clarification buttons instead of immediate human handoff\nif (item.is_handoff === true) {\n  sendButtons = true;\n  newState = 'awaiting_intent';\n  responseText = '';\n}\n\n// For FAQ intent (no explicit new_state from faq-answer sub-workflow), set state back to awaiting_intent\nif (!item.new_state && !item.is_handoff) {\n  newState = 'awaiting_intent';\n}\n\nreturn {\n  json: {\n    response_text: responseText,\n    new_state: newState,\n    new_context: newContext,\n    conversation_id: formatFaqs.conversation_id,\n    remote_jid: formatFaqs.remote_jid,\n    instance_name: formatFaqs.instance_name,\n    api_key: formatFaqs.api_key,\n    send_buttons: sendButtons\n  }\n};"
       }
     },
     {
@@ -852,6 +858,10 @@
             {
               "name": "api_key",
               "type": "string"
+            },
+            {
+              "name": "send_buttons",
+              "type": "boolean"
             }
           ],
           "mappingMode": "defineBelow",
@@ -859,7 +869,8 @@
             "remote_jid": "={{ $json.remote_jid }}",
             "response_text": "={{ $json.response_text }}",
             "instance_name": "={{ $json.instance_name }}",
-            "api_key": "={{ $json.api_key }}"
+            "api_key": "={{ $json.api_key }}",
+            "send_buttons": "={{ $json.send_buttons || false }}"
           }
         }
       }
