@@ -196,7 +196,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const conv = $input.item.json;\nconst msg = $('Extract Message Fields').first().json;\n\nlet messageText = msg.message_text;\nif (msg.button_id) {\n  const buttonMap = {\n    'promo_precios': 'Quiero información sobre precios y la promoción',\n    'horarios_ubicacion': '¿Cuáles son sus horarios y dónde están ubicados?',\n    'agendar_cita': 'Quiero agendar una cita'\n  };\n  messageText = buttonMap[msg.button_id] || msg.message_text;\n}\n\nreturn { json: { ...conv, message_text: messageText, wa_message_id: msg.wa_message_id } };"
+        "jsCode": "const conv = $input.item.json;\nconst msg = $('Extract Message Fields').first().json;\n\nconst buttonMap = {\n  'promo_precios': 'Quiero información sobre precios y la promoción',\n  'horarios_ubicacion': '¿Cuáles son sus horarios y dónde están ubicados?',\n  'agendar_cita': 'Quiero agendar una cita',\n  '1': 'Quiero información sobre precios y la promoción',\n  '2': '¿Cuáles son sus horarios y dónde están ubicados?',\n  '3': 'Quiero agendar una cita'\n};\n\nlet messageText = msg.message_text;\nif (msg.button_id && buttonMap[msg.button_id]) {\n  messageText = buttonMap[msg.button_id];\n} else if (buttonMap[msg.message_text?.trim()]) {\n  messageText = buttonMap[msg.message_text.trim()];\n}\n\nreturn { json: { ...conv, message_text: messageText, wa_message_id: msg.wa_message_id } };"
       }
     },
     {

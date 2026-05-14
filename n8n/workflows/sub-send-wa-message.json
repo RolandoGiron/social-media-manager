@@ -45,7 +45,7 @@
       "position": [720, 160],
       "parameters": {
         "method": "POST",
-        "url": "=http://clinic-evolution:8080/message/sendButtons/{{ $json.instance_name || 'clinic-main' }}",
+        "url": "=http://clinic-evolution:8080/message/sendText/{{ $json.instance_name || 'clinic-main' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -60,8 +60,19 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ { number: $json.remote_jid, title: '¿En qué puedo ayudarte?', description: 'Selecciona una opción para continuar:', footer: 'Clínica Dermatológica', buttons: [{ type: 'reply', displayText: 'Precios / Promo', id: 'promo_precios' }, { type: 'reply', displayText: 'Horarios / Ubicación', id: 'horarios_ubicacion' }, { type: 'reply', displayText: 'Agendar cita', id: 'agendar_cita' }] } }}",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.remote_jid }}"
+            },
+            {
+              "name": "text",
+              "value": "*¿En qué puedo ayudarte?*\n\n1️⃣ Precios / Promo\n2️⃣ Horarios / Ubicación\n3️⃣ Agendar cita\n\n_Responde con el número de tu opción_"
+            }
+          ]
+        },
         "options": {}
       }
     },
